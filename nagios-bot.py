@@ -36,7 +36,12 @@ class NagiosBot(bot.SimpleBot):
                         _is_found = True
                         try:
                             target, message = message_command['callback'](event, event.message, m)
-                            self.send_message(target, message)
+                            if isinstance(message, basestring):
+                                self.send_message(target, message)
+                            else:
+                                for m in message:
+                                    self.send_message(target, m)
+
                         except Exception, e:
                             self.send_message(event.target, "%s: %s From Exception I'm sorry but I don't understand your command" % (e, event.source) )
             if _is_found is False:

@@ -50,6 +50,7 @@ class MozillaNagiosStatus:
         self.nagios_log = NAGIOS_LOG
         self.nagios_cmd = NAGIOS_CMD
         self.oncall_file = ONCALL_FILE
+        self.status_file = STATUS_FILE
         self.service_output_limit = SERVICE_OUTPUT_LIMIT
         self.default_channel_group = DEFAULT_CHANNEL_GROUP
         self.channel_groups = CHANNEL_GROUPS
@@ -219,7 +220,7 @@ class MozillaNagiosStatus:
 
     def nagios_status(self, event, message, options):
         logger.info("Just testing this %s" % event.target)
-        conf = self.parseConf(STATUS_FILE)
+        conf = self.parseConf(self.status_file)
         service_statuses = []
         host_statuses = []
 
@@ -260,11 +261,13 @@ class MozillaNagiosStatus:
                     services_passive_warning_count += 1 
                 if entry['current_state'] == '2' and entry['check_type'] == '1':
                     services_passive_down_count += 1 
-            return event.target, "%s: Status file is %i seconds stale" % (event.source, self.file_age_in_seconds(STATUS_FILE)) 
-            return event.target, "%s: Hosts Total/Up/Warning/Down" % (event.source) 
-            return event.target, "%s:       %s/%s/%s/%s" % (event.source, total_host_count, hosts_up_count, hosts_warning_count, hosts_down_count) 
-            return event.target, "%s: Services Total/Up/Warning/Down" % (event.source) 
-            return event.target, "%s:          %s/%s/%s/%s" % (event.source, total_service_count, services_active_up_count,services_active_warning_count, services_active_down_count) 
+            return_msg = ["%s: Status file is %i seconds stale" % (event.source, self.file_age_in_seconds(STATUS_FILE)), 
+            "%s: Hosts Total/Up/Warning/Down" % (event.source), 
+            "%s:       %s/%s/%s/%s" % (event.source, total_host_count, hosts_up_count, hosts_warning_count, hosts_down_count),
+            "%s: Services Total/Up/Warning/Down" % (event.source), 
+            "%s:          %s/%s/%s/%s" % (event.source, total_service_count, services_active_up_count,services_active_warning_count, services_active_down_count)] 
+            return event.target, return_msg
+
         else:
             return event.target, "%s: Sorry, but I'm unable to open the status file" % event.source
 
