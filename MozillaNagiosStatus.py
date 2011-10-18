@@ -403,7 +403,7 @@ class MozillaNagiosStatus:
         while 1:
             if (int(time.time()) - laststat) > 30:
                 laststat = int(time.time())
-                new_inode = os.stat(nagios_log)[1]
+                new_inode = os.stat(self.nagios_log)[1]
                 if inode != new_inode:
                     inode = new_inode
                     file.close()
