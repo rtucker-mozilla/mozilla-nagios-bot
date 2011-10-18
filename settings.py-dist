@@ -1,0 +1,12 @@
+port = 6667
+use_ssl = False
+bot_name = '<nagios-bot_name>'
+server = 'irc.yourhost.com'
+channels = [
+        '#channelhere password',
+    ]
+ssl_options = {'do_handshake_on_connect':False, 'cert_reqs':'None', 'server_side':False}
+try:
+    from settings_local.py import *
+except:
+    pass
