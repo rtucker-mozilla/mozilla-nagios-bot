@@ -205,7 +205,7 @@ class MozillaNagiosStatus:
         ##Following is for the test case to pass. We shouldn't ever have a host with this name
         if host == 'test-host.fake.mozilla.com':
             return True
-        conf = self.parseConf(STATUS_FILE)
+        conf = self.parseConf(self.status_file)
         if host is None:
             host = options.group(1)
         host = host.strip()
@@ -261,7 +261,7 @@ class MozillaNagiosStatus:
                     services_passive_warning_count += 1 
                 if entry['current_state'] == '2' and entry['check_type'] == '1':
                     services_passive_down_count += 1 
-            return_msg = ["%s: Status file is %i seconds stale" % (event.source, self.file_age_in_seconds(STATUS_FILE)), 
+            return_msg = ["%s: Status file is %i seconds stale" % (event.source, self.file_age_in_seconds(self.status_file)), 
             "%s: Hosts Total/Up/Warning/Down" % (event.source), 
             "%s:       %s/%s/%s/%s" % (event.source, total_host_count, hosts_up_count, hosts_warning_count, hosts_down_count),
             "%s: Services Total/Up/Warning/Down" % (event.source), 
@@ -518,7 +518,7 @@ class MozillaNagiosStatus:
             return False
 
     def status_by_host_name(self, event, message, options):
-        conf = self.parseConf(self.STATUS_FILE)
+        conf = self.parseConf(self.status_file)
         service_statuses = []
         if conf is not False:
             hostname = options.group(1)
@@ -576,10 +576,10 @@ class MozillaNagiosStatus:
                             state_string = format.color('CRITICAL', format.RED)
                         write_string = "%s: %s:%s is %s - %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'])
                         output_list.append(write_string)
-                if len(output_list) < service_output_limit:
-                    return event.target, "\n".join(output_list)
+                if len(output_list) < self.service_output_limit:
+                    return event.target, output_list
                 else:
-                    write_string = "%s: more than %i services returned. Please be more specific." % (event.source, service_output_limit)
+                    write_string = "%s: more than %i services returned. Please be more specific." % (event.source, self.service_output_limit)
                     return event.target, write_string
             else:
                 host_found = False
