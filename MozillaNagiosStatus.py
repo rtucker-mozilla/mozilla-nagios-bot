@@ -293,12 +293,11 @@ class MozillaNagiosStatus:
             self.write_to_nagios_cmd(write_string)
             return event.target, return_string
         except TypeError:
-            connection.send_message(event.target, "%s: Sorry, but no alert exists at this index" % (event.source) )
+            return event.target, "%s: Sorry, but no alert exists at this index" % (event.source)
         except IndexError:
-            connection.send_message(event.target, "%s: Sorry, but no alert exists at this index" % (event.source) )
+            return event.target, "%s: Sorry, but no alert exists at this index" % (event.source)
         except Exception, e:
-            connection.send_message(event.target, "Could not ack")
-            connection.send_message(event.target, "Exception is %s" % (e) )
+            return event.target, "%s: Unhandled exception: %s" % (event.source, e)
 
     def unack_by_host(self, event, message, options):
         timestamp = int(time.time())
