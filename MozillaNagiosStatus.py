@@ -286,11 +286,12 @@ class MozillaNagiosStatus:
                 service is None
             if service is None:
                 write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
-                return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
+                return_string = "%s: The Host %s has been ack'd" % (event.source, host)  
             else:
                 write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;%s;%s\n" % (timestamp,host,service,from_user,message)
-                return event.target, "%s: The Service %s:%s has been ack'd" % (event.source, host, service) 
+                return_string = "%s: The Service %s:%s has been ack'd" % (event.source, host, service)
             self.write_to_nagios_cmd(write_string)
+            return event.target, return_string
         except TypeError:
             connection.send_message(event.target, "%s: Sorry, but no alert exists at this index" % (event.source) )
         except IndexError:
@@ -354,12 +355,12 @@ class MozillaNagiosStatus:
                 message = None
             if service is None:
                 write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
+                self.write_to_nagios_cmd(write_string)
                 return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
             else:
                 write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;%s;%s\n" % (timestamp, host, service, from_user, message)
+                self.write_to_nagios_cmd(write_string)
                 return event.target, "%s: The Service %s:%s has been ack'd" % (event.source, host, service) 
-
-            self.write_to_nagios_cmd(write_string)
         except TypeError:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
         except IndexError:
@@ -378,7 +379,7 @@ class MozillaNagiosStatus:
                 message = ''
 
             write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
-
+            self.write_to_nagios_cmd(write_string)
             return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
         except TypeError:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
@@ -476,7 +477,7 @@ class MozillaNagiosStatus:
 
     def write_to_nagios_cmd(self, write_string):
         try:
-            rw = open(self.nagios_cmd, 'a')
+            rw = open(self.nagios_cmd, 'a+')
             rw.write(write_string)
             rw.close()
         except:
