@@ -451,7 +451,7 @@ class MozillaNagiosStatus:
                 #message = "%s;%s" % (m.group(3).split(";")[4], m.group(3).split(";")[5])
                 write_string = "%s:%s is %s: %s" % (l.host, l.service, state_string, l.message)
         else:
-            if re.search(l.state, "ACKNOWLEDGEMENT"):
+            if re.search("ACKNOWLEDGEMENT", l.state):
                 is_ack = True
                 state_string = format.color(l.state, format.BLUE)
             elif re.search(l.state, "UP"):
@@ -465,8 +465,7 @@ class MozillaNagiosStatus:
                 write_string = "[%i] %s is %s :%s" % (self.get_ack_number(), l.host, state_string, l.message)
             else:
                 state_string = format.color(l.state, format.BLUE)
-                message = "%s;%s;%s" % (m.group(3).split(";")[3], m.group(3).split(";")[4], m.group(3).split(";")[5])
-                write_string = "%s is %s :%s" % (l.host, state_string, message)
+                write_string = "%s is %s :%s" % (l.host, state_string, l.message)
         channel = self.get_channel_group(l.notification_recipient)
         if is_test is False:
             if self.is_muted(channel) is False:

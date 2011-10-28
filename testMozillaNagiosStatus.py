@@ -44,6 +44,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.service_line = '[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5% inode=99%):'
         self.ack_line = '[1318870432] SERVICE NOTIFICATION: socorroalertlist;fake-host.mozilla.org;Disk Space /;ACKNOWLEDGEMENT (WARNING);notify-by-email;DISK WARNING - free space: / 60658 MB (29% inode=97%):;ashish;bug 689547'
         self.host_line = "[1313158996] HOST NOTIFICATION: sysalertslist;fake-host.mozilla.org;DOWN;host-notify-by-email;PING CRITICAL - Packet loss = 100%"
+        self.ack_host_line = "[1319720894] HOST NOTIFICATION: sysalertslist;fake-host.mozilla.org;ACKNOWLEDGEMENT (DOWN);host-notify-by-email;PING CRITICAL - Packet loss = 100%;rtucker;known"
 
     def test_get_environment_vars(self):
         self.assertEqual(self.tc.list_offset, 100)
@@ -163,6 +164,18 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: The Host test-host.fake.mozilla.com test has been ack'd" % (self.my_nick) )
 
+    def test_ack_host_by_index(self):
+        self.tc.process_line(self.host_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 101)
+        message = "ack 101 test message"
+        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Host fake-host.mozilla.org has been ack'd" % (self.my_nick) )
+        self.tc.process_line(self.ack_host_line, True)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Host fake-host.mozilla.org has been ack'd" % (self.my_nick) )
+        
     def test_unack_by_index(self):
         cmd = "unack 101"
         m = re.search('^unack (\d+)$', cmd)
