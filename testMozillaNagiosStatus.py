@@ -39,7 +39,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.event.source = 'rtucker'
         self.event.target = '#sysadmins'
         self.connection = Mock()
-        self.tc = MozillaNagiosStatus(self.connection)
+        self.tc = MozillaNagiosStatus(self.connection, [])
         self.my_nick = self.event.source
         self.service_line = '[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5% inode=99%):'
         self.ack_line = '[1318870432] SERVICE NOTIFICATION: socorroalertlist;fake-host.mozilla.org;Disk Space /;ACKNOWLEDGEMENT (WARNING);notify-by-email;DISK WARNING - free space: / 60658 MB (29% inode=97%):;ashish;bug 689547'
@@ -53,17 +53,17 @@ class MozillaNagiosStatusTest(unittest.TestCase):
     def test_ackable_list_bad_host(self):
         self.assertEqual(len(self.tc.ackable_list), 100)
         self.tc.ackable('Test Host-Not Found', 'Test Service', 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 101)
+        self.assertEqual(self.tc.get_ack_number(), 100)
         self.assertEqual(len(self.tc.ackable_list), 100)
-        self.assertEqual(self.tc.ackable_list[1]['host'], 'Test Host-Not Found')
-        self.assertEqual(self.tc.ackable_list[1]['service'], 'Test Service')
-        self.assertEqual(self.tc.ackable_list[1]['state'], 'CRITICAL')
-        self.assertEqual(self.tc.ackable_list[1]['message'], 'Test Message')
+        self.assertEqual(self.tc.ackable_list[0]['host'], 'Test Host-Not Found')
+        self.assertEqual(self.tc.ackable_list[0]['service'], 'Test Service')
+        self.assertEqual(self.tc.ackable_list[0]['state'], 'CRITICAL')
+        self.assertEqual(self.tc.ackable_list[0]['message'], 'Test Message')
 
     def test_downtime_by_index_bad_host(self):
         self.tc.ackable('Test Host-Not Found', 'Test Service', 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 101)
-        message = 'downtime 101 1m blah blah'
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime 100 1m blah blah'
         m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
         target, message = self.tc.downtime_by_index(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
@@ -71,8 +71,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
     def test_downtime_by_index_host_only(self):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 101)
-        message = 'downtime 101 1m blah blah'
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime 100 1m blah blah'
         m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
         target, message = self.tc.downtime_by_index(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
@@ -80,17 +80,26 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
     def test_downtime_by_index_with_service(self):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 101)
-        message = 'downtime 101 1m blah blah'
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime 100 1m blah blah'
         m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
         target, message = self.tc.downtime_by_index(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for test-host.fake.mozilla.com:Test Service scheduled for 0:01:00' % (self.my_nick) )
 
+    def test_increment_ackable_list_correctly(self):
+        self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        self.assertEqual(self.tc.ackable_list[0]['service'], 'Test Service')
+        self.tc.ackable('test-host.fake.mozilla.com', 'Test Service 2', 'CRITICAL', 'Test Message')
+        self.assertEqual(self.tc.ackable_list[0]['service'], 'Test Service')
+        self.assertEqual(self.tc.ackable_list[1]['service'], 'Test Service 2')
+
     def test_downtime_by_hostname_with_service(self):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 101)
-        message = 'downtime 101 1m blah blah'
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime 100 1m blah blah'
         m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
         target, message = self.tc.downtime_by_index(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
@@ -98,7 +107,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
     def test_downtime_by_hostname(self):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 101)
+        self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime test-host.fake.mozilla.com 1m blah blah'
         m = re.search('^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', message)
         target, message = self.tc.downtime(self.event, message, m)
@@ -141,7 +150,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         message = "whoisoncall"
         target, message = self.tc.get_oncall(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: not-yet-set currently has the pager" % (self.my_nick) )
+        self.assertEqual(message, "%s: unknown currently has the pager" % (self.my_nick) )
 
     def test_unack_host(self):
         message = "unack test-host.fake.mozilla.com"
@@ -166,8 +175,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
     def test_ack_host_by_index(self):
         self.tc.process_line(self.host_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 101)
-        message = "ack 101 test message"
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = "ack 100 test message"
         m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
         target, message = self.tc.ack(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
@@ -176,8 +185,85 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: The Host fake-host.mozilla.org has been ack'd" % (self.my_nick) )
         
+    def test_ack_host_by_index_after_one_cycle(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,101):
+            service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
+            self.tc.process_line(service_line, True)
+        message = "ack 100 test message"
+        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Service fake-host.mozilla.org:root partition100 has been ack'd" % (self.my_nick) )
+        self.tc.process_line(self.ack_host_line, True)
+
+    def test_ack_host_by_index_after_half_cycle(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,51):
+            service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
+            self.tc.process_line(service_line, True)
+        message = "ack 150 test message"
+        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Service fake-host.mozilla.org:root partition50 has been ack'd" % (self.my_nick) )
+        self.assertEqual(self.tc.ackable_list[51], None)
+
+    def test_ack_host_by_index_after_five_cycles(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,501):
+            service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
+            self.tc.process_line(service_line, True)
+        message = "ack 100 test message"
+        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Service fake-host.mozilla.org:root partition500 has been ack'd" % (self.my_nick) )
+        self.tc.process_line(self.ack_host_line, True)
+
+    def test_ack_host_by_index_after_five_cycles_with_ack(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,501):
+            service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
+            self.tc.process_line(service_line, True)
+            message = "ack %i test message" % (i % self.tc.list_size)
+            m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+            target, message = self.tc.ack(self.event, message, m)
+            self.assertEqual(target, "#sysadmins")
+            self.assertEqual(message, "%s: The Service fake-host.mozilla.org:root partition%i has been ack'd" % (self.my_nick, i) )
+            self.tc.process_line(self.ack_host_line, True)
+
+    def test_ack_host_by_index_after_five_cycles_with_ack_incorrect_syntax(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,501):
+            service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
+            self.tc.process_line(service_line, True)
+            message = "%i ack test message" % (i % self.tc.list_size)
+            m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+            target, message = self.tc.ack(self.event, message, m)
+            self.assertEqual(target, "#sysadmins")
+            self.assertEqual(message, "%s: The Service fake-host.mozilla.org:root partition%i has been ack'd" % (self.my_nick, i) )
+            self.tc.process_line(self.ack_host_line, True)
+    def test_ack_host_by_index_after_hundred_cycles(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,100001):
+            service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
+            self.tc.process_line(service_line, True)
+        message = "ack 100 test message"
+        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Service fake-host.mozilla.org:root partition100000 has been ack'd" % (self.my_nick) )
+        self.tc.process_line(self.ack_host_line, True)
+
     def test_unack_by_index(self):
-        cmd = "unack 101"
+        cmd = "unack 100"
         m = re.search('^unack (\d+)$', cmd)
         target, message = self.tc.unack(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
@@ -185,27 +271,27 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
         #Now add an alert to the list and try to unack
         tmp = self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 101)
+        self.assertEqual(self.tc.get_ack_number(), 100)
         target, message = self.tc.unack(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: The Host test-host.fake.mozilla.com has been ack'd" % (self.my_nick) )
     def test_process_line(self):
         self.tc.process_line(self.service_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 101)
+        self.assertEqual(self.tc.get_ack_number(), 100)
         self.tc.process_line(self.host_line, True)
         self.tc.process_line(self.service_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 103)
-        for i in range(103,199):
+        self.assertEqual(self.tc.get_ack_number(), 102)
+        """for i in range(103,199):
             self.tc.process_line(self.service_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 199)
+        self.assertEqual(self.tc.get_ack_number(), 100)
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
-        for i in range(101,200):
+        for i in range(100,200):
             self.tc.process_line(self.service_line, True)
-            self.assertEqual(self.tc.get_ack_number(), i)
+            self.assertEqual(self.tc.get_ack_number(), i - 1)
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
-        for i in range(101,120):
+        for i in range(100,120):
             self.tc.process_line(self.service_line, True)
             self.assertEqual(self.tc.get_ack_number(), i)
         #Make sure that reading ack'd lines don't get added to the ackable_list
@@ -219,7 +305,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.process_line(self.ack_line, True)
         self.tc.process_line(self.ack_line, True)
         self.tc.process_line(self.ack_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 139)
+        self.assertEqual(self.tc.get_ack_number(), 139)"""
 
     def test_get_channel_group(self):
         self.assertEqual(self.tc.get_channel_group('sysalertslist'), '#sysadmins')

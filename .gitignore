@@ -1,2 +1,13 @@
 *.swp
 *.pyc
+MozillaIRCPager_settings.py
+MozillaNagiosStatus_settings.py
+MozillaTestClass.py
+settings_local.py
+nagios_cmd
+nagios_log
+oncall
+page.pl
+settings.py
+settings.py.erb
+ircutils

@@ -25,11 +25,13 @@
 
 import subprocess
 from MozillaIRCPager_settings import *
+from MozillaNagiosStatus_settings import ONCALL_FILE
 from settings import logger
-
+import re
 class MozillaIRCPager:
-    def __init__(self, connection):
+    def __init__(self, connection, channels):
         self.PAGE_SCRIPT = PAGE_SCRIPT
+        self.oncall_file = ONCALL_FILE
         self.message_commands = []
         self.build_regex_list()
 
@@ -44,7 +46,8 @@ class MozillaIRCPager:
         should_page = False
         recipient = options.group(1)
         message = options.group(2)
-
+        if recipient == "oncall":
+            recipient = self.get_oncall_from_file()
         ##Check that we have a valid message and recipient and set should_page to true
         if message is not None and recipient is not None:
             should_page = True
@@ -58,3 +61,21 @@ class MozillaIRCPager:
             return event.target, "%s: %s has been paged" % (event.source, recipient)
         else:
             return event.target, "%s: %s could not be paged" % (event.source, recipient)
+
+    def get_oncall_from_file(self):
+        oncall = 'not-yet-set'
+        try:
+            fh = open(self.oncall_file)
+            for line in fh.readlines():
+                m = re.search("; On Call = (.+)$", line)
+                if m:
+                    oncall = m.group(1)
+        except Exception, e:
+            print e
+            oncall = 'not-yet-set'
+        return oncall
+
+    def return_help(self):
+        return [
+            'page <recipient|oncall> <message to send>',
+                ]

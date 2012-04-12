@@ -29,7 +29,7 @@ import subprocess
 import thread
 import re
 import time
-
+import re
 import os, cPickle
 from MozillaIRCPager import MozillaIRCPager
 from NagiosLogLine import NagiosLogLine
@@ -37,7 +37,9 @@ from settings import logger
 from MozillaNagiosStatus_settings import *
 
 class MozillaNagiosStatus:
-    def __init__(self, connection):
+    def __init__(self, connection, channels):
+        self.has_rolled = False
+        self.channels = channels
         self.connection = connection
         self.mute_list = []
         self.message_commands = []
@@ -54,9 +56,12 @@ class MozillaNagiosStatus:
         self.service_output_limit = SERVICE_OUTPUT_LIMIT
         self.default_channel_group = DEFAULT_CHANNEL_GROUP
         self.channel_groups = CHANNEL_GROUPS
+        self.update_oncall = UPDATE_ONCALL
+        self.oncall_channels = ONCALL_CHANNELS
 
         ##Start new thread to parse the nagios log file
         thread.start_new_thread(self.tail_file, (self.connection,))
+        thread.start_new_thread(self.monitor_current_oncall, (self.connection,))
         #self.tail_file(self.connection)
 
     def build_regex_list(self):
@@ -83,14 +88,39 @@ class MozillaNagiosStatus:
         import os, stat
         return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
+    def return_help(self):
+        return [
+            'ack <id_of alert> <reason for ack>',
+            'ack <host:server> <reason for ack>',
+            'ack <host> <reason for ack>',
+            'unack <id_of alert>',
+            'unack <host>',
+            'status <host>',
+            'status <host:service>',
+            'downtime <alert_id> <interval><dhms> <message> <interval> is the how long <dhms> is days|hours|minutes|seconds',
+            'downtime <host:service> <interval><dhms> <message> <interval> is the how long <dhms> is days|hours|minutes|seconds',
+            'mute',
+            'unmute',
+            'oncall|whoisoncall',
+                ]
     def return_plugins(self):
         return self.message_commands
     
     def ackable(self, host, service, state, message):
+        """
+            initial state of self.has_rolled = False
+        """
 
-        if self.act_ct == (self.list_size) or self.act_ct == 0:
-            self.act_ct = 1
-        elif self.act_ct > 0:
+        if self.act_ct == (self.list_size - 1) and self.has_rolled == False:
+            self.has_rolled = True
+            self.act_ct = 0
+        elif self.act_ct == 0 and self.has_rolled == False:
+            self.has_rolled = True
+            self.act_ct = 0
+        elif self.act_ct == 0 and self.has_rolled == True:
+            self.act_ct = (self.act_ct + 1) % self.list_size
+        elif self.act_ct > 0 or self.has_rolled == True:
+            self.has_rolled = False
             self.act_ct = (self.act_ct + 1) % self.list_size
 
         if state == "WARNING" or state == "CRITICAL" or state == "UP" or state == "OK" or state == "DOWN":
@@ -212,7 +242,7 @@ class MozillaNagiosStatus:
         if conf is not False:
             for entry in conf:
                 if entry[0] == 'hoststatus' and entry[1]['host_name'] == host:
-                    return True, "%s: The Host %s has been found" % (event.source, host) 
+                    return True
                 else:
                     continue
 
@@ -391,9 +421,53 @@ class MozillaNagiosStatus:
     def get_line(self, input_line):
         return input_line
 
+    def get_current_timestamp(self):
+        ret_time = int(time.time())
+        return ret_time
+
+    def set_topic(self, connection, channel, topic):
+        if channel and topic:
+            connection.execute("TOPIC", channel, trailing=topic)
+
+    def send_oncall_update(self, connection, channel, oncall):
+        connection.send_message(channel, "New Sysadmin OnCall is %s" % (oncall))
+
+    def monitor_current_oncall(self, connection):
+        current_oncall = self.get_oncall_from_file()
+        while 1:
+            new_oncall = self.get_oncall_from_file()
+            if new_oncall != current_oncall:
+                for channel in self.oncall_channels:
+                    self.send_oncall_update(connection, channel['name'], new_oncall)
+                if self.update_oncall:
+                    self.set_new_oncall(connection, new_oncall)
+                current_oncall = new_oncall
+            else:
+                time.sleep(30)
+    def get_channel_topic(self, channels, channel_name):
+        try: 
+            return [channel['topic'] for channel in channels if channel['name'] == channel_name][0]
+        except:
+            return ''
+
+    def set_new_oncall(self, connection, new_oncall):
+        for channel in self.oncall_channels:
+            channel_current_topic = self.get_channel_topic(self.channels, channel['name'])
+            m = re.search('on call sysadmin: (\S+)', channel_current_topic)
+            #    If the topic has an on call sysadmin: <sysadmin_name>
+            if m and m.group(1):
+                channel_current_topic = re.sub('on call sysadmin: \S+','on call sysadmin: %s' % new_oncall, channel_current_topic)
+            #    If there is no one on call
+            elif len(channel_current_topic) == 0:
+                channel_current_topic = 'on call sysadmin: %s' % new_oncall
+            #    If there is a topic, but no on call in it
+            else:
+                channel_current_topic = '%s || on call sysadmin: %s' % (channel_current_topic, new_oncall)
+
+            self.set_topic(connection, channel['name'], channel_current_topic)
+
     def tail_file(self, connection):
-        import os, re, time
-        laststat = int(time.time())
+        laststat = self.get_current_timestamp()
         file = open(self.nagios_log,'r')
         inode = os.stat(self.nagios_log)[1]
 
@@ -544,6 +618,7 @@ class MozillaNagiosStatus:
                 if len(service_statuses) == 0:
                         return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
                 else:
+                    output_list = []
                     for entry in service_statuses:
                         if entry['host_name'] == hostname:
                             if entry['current_state'] == '0':
@@ -553,8 +628,8 @@ class MozillaNagiosStatus:
                             if entry['current_state'] == '2':
                                 state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'])
-                            return event.target, write_string
-                        if hostname == '*' and entry['service_description'].upper().strip() == service.upper().strip():
+                            output_list.append(write_string)
+                        elif hostname == '*' and entry['service_description'].upper().strip() == service.upper().strip():
                             if entry['current_state'] == '0':
                                 state_string = format.color('OK', format.GREEN)
                             if entry['current_state'] == '1':
@@ -562,7 +637,31 @@ class MozillaNagiosStatus:
                             if entry['current_state'] == '2':
                                 state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'])
-                            return event.target, write_string
+                            output_list.append(write_string)
+                        elif '*' in hostname and entry['service_description'].upper().strip() == service.upper().strip() and hostname.split('*')[0] in entry['host_name']:
+                            if entry['current_state'] == '0':
+                                state_string = format.color('OK', format.GREEN)
+                            if entry['current_state'] == '1':
+                                state_string = format.color('WARNING', format.YELLOW)
+                            if entry['current_state'] == '2':
+                                state_string = format.color('CRITICAL', format.RED)
+                            write_string = "%s: %s:%s is %s - %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'])
+                            output_list.append(write_string)
+                        elif '*' in hostname and '*' == service.upper().strip() and hostname.split('*')[0] in entry['host_name']:
+                            for entry in service_statuses:
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('OK', format.GREEN)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('WARNING', format.YELLOW)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('CRITICAL', format.RED)
+                                write_string = "%s: %s:%s is %s - %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'])
+                                output_list.append(write_string)
+                    if len(output_list) < self.service_output_limit:
+                        return event.target, output_list
+                    else:
+                        write_string = "%s: more than %i services returned. Please be more specific." % (event.source, self.service_output_limit)
+                        return event.target, write_string
             elif service == '*':
                 output_list = []
                 for entry in service_statuses:
@@ -574,6 +673,15 @@ class MozillaNagiosStatus:
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
                         write_string = "%s: %s:%s is %s - %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'])
+                        output_list.append(write_string)
+                    elif '*' in hostname and hostname.split('*')[0] in entry['host_name']:
+                        if entry['current_state'] == '0':
+                            state_string = format.color('OK', format.GREEN)
+                        if entry['current_state'] == '1':
+                            state_string = format.color('WARNING', format.YELLOW)
+                        if entry['current_state'] == '2':
+                            state_string = format.color('CRITICAL', format.RED)
+                        write_string = "%s: %s:%s is %s - %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'])
                         output_list.append(write_string)
                 if len(output_list) < self.service_output_limit:
                     return event.target, output_list
@@ -597,7 +705,7 @@ class MozillaNagiosStatus:
                 return event.target, write_string
         else:
             return event.target, "%s: Sorry, but I'm unable to open the status file" % event.source
-    def get_oncall(self, event, message, options):
+    def get_oncall_from_file(self):
         oncall = 'not-yet-set'
         try:
             fh = open(self.oncall_file)
@@ -607,8 +715,10 @@ class MozillaNagiosStatus:
                     oncall = m.group(1)
         except Exception, e:
             oncall = 'not-yet-set'
+        return oncall
 
-        return event.target, "%s: %s currently has the pager" % (event.source, oncall) 
+    def get_oncall(self, event, message, options):
+        return event.target, "%s: %s currently has the pager" % (event.source, self.get_oncall_from_file()) 
 
     def page_with_alert_number(self, event, message, options):
         try:
