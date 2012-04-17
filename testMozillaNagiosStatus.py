@@ -318,6 +318,53 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', plugins[0]['regex']) 
         
         
+class NagiosStatusTest(unittest.TestCase):
+    def setUp(self):
+        self.event = Mock()
+        self.event.source = 'rtucker'
+        self.event.target = '#sysadmins'
+        self.connection = Mock()
+        self.tc = MozillaNagiosStatus(self.connection, [])
+        self.my_nick = self.event.source
+
+    def test_empty_host_status(self):
+        cmd = "status db2.foo.mozilla.com"
+        m = re.search('^status ([^:]+)', cmd)
+        target, message = self.tc.status_by_host_name(self.event, cmd, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, '%s: db2.foo.mozilla.com is \x033OK\x03\x03\x03 - PING OK - Packet loss = 0%%, RTA = 0.91 ms' % self.event.source)
+
+    def test_empty_host_wildcard(self):
+        cmd = "status db*:PING"
+        m = re.search('^status ([^:]+)', cmd)
+        target, message = self.tc.status_by_host_name(self.event, cmd, m)
+        self.assertEqual(len(message), 2)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message[0], '%s: db1.foo.mozilla.com:PING is \x033OK\x03\x03\x03 - PING OK - Packet loss = 0%%, RTA = 0.80 ms' % self.event.source)
+        self.assertEqual(message[1], '%s: db2.foo.mozilla.com:PING is \x033OK\x03\x03\x03 - PING OK - Packet loss = 0%%, RTA = 0.88 ms' % self.event.source)
+        
+    def test_basic_host_status_wildcard_services(self):
+        cmd = "status db2.foo.mozilla.com:*"
+        m = re.search('^status ([^:]+):(.+)$', cmd)
+        target, message = self.tc.status_by_host_name(self.event, cmd, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(len(message), 11)
+
+    def test_basic_host_status_specific_service(self):
+        cmd = "status db2.foo.mozilla.com:swap"
+        m = re.search('^status ([^:]+):(.+)$', cmd)
+        target, message = self.tc.status_by_host_name(self.event, cmd, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(len(message), 1)
+        self.assertEqual(message[0], "%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source)
+
+    def test_basic_host_status_wildcard_service_from_start(self):
+        cmd = "status db2.foo.mozilla.com:Sw*"
+        m = re.search('^status ([^:]+):(.+)$', cmd)
+        target, message = self.tc.status_by_host_name(self.event, cmd, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message[0], "%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source)
+        self.assertEqual(len(message), 1)
 class NagiosLogLineTest(unittest.TestCase):
 
     def setUp(self):

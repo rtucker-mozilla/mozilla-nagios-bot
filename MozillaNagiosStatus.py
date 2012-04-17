@@ -599,7 +599,6 @@ class MozillaNagiosStatus:
                 service = options.group(2).upper()
             except:
                 service = None
-
             host_statuses = []
             for entry in conf:
                 if service is None:
@@ -607,14 +606,20 @@ class MozillaNagiosStatus:
                         host_statuses.append(entry[1])
                     if entry[0] == 'servicestatus':
                         service_statuses.append(entry[1])
-                elif service != '*':
+                elif service is not None and '*' not in service:
                     if entry[0] == 'servicestatus' and entry[1]['service_description'].upper() == service:
                         service_statuses.append(entry[1])
-                elif service == '*':
+                elif service is not None and service == '*':
                     if entry[0] == 'servicestatus':
                         service_statuses.append(entry[1])
+                elif service is not None and '*' in service:
+                    service_search = service.split('*')[0]
+                    if entry[0] == 'servicestatus' and entry[1]['service_description'].upper().startswith(service_search):
+                        service_statuses.append(entry[1])
+                else:
+                    return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
             ## OK, we've looped through everything and added them to the appropriate lists
-            if service is not None and service != '*':
+            if service is not None and '*' not in service:
                 if len(service_statuses) == 0:
                         return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
                 else:
@@ -657,12 +662,23 @@ class MozillaNagiosStatus:
                                     state_string = format.color('CRITICAL', format.RED)
                                 write_string = "%s: %s:%s is %s - %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'])
                                 output_list.append(write_string)
+                        elif  '*' in service.upper().strip().split('*')[0] and hostname.split('*')[0] in entry['host_name']:
+                            for entry in service_statuses:
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('OK', format.GREEN)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('WARNING', format.YELLOW)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('CRITICAL', format.RED)
+                                write_string = "%s: %s:%s is %s - %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'])
+                                output_list.append(write_string)
                     if len(output_list) < self.service_output_limit:
                         return event.target, output_list
                     else:
                         write_string = "%s: more than %i services returned. Please be more specific." % (event.source, self.service_output_limit)
                         return event.target, write_string
-            elif service == '*':
+            elif service is not None and '*' in service and '*' not in hostname:
+                service = service.split('*')[0]
                 output_list = []
                 for entry in service_statuses:
                     if entry['host_name'] == hostname:
@@ -675,6 +691,24 @@ class MozillaNagiosStatus:
                         write_string = "%s: %s:%s is %s - %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'])
                         output_list.append(write_string)
                     elif '*' in hostname and hostname.split('*')[0] in entry['host_name']:
+                        if entry['current_state'] == '0':
+                            state_string = format.color('OK', format.GREEN)
+                        if entry['current_state'] == '1':
+                            state_string = format.color('WARNING', format.YELLOW)
+                        if entry['current_state'] == '2':
+                            state_string = format.color('CRITICAL', format.RED)
+                        write_string = "%s: %s:%s is %s - %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'])
+                        output_list.append(write_string)
+                if len(output_list) < self.service_output_limit:
+                    return event.target, output_list
+                else:
+                    write_string = "%s: more than %i services returned. Please be more specific." % (event.source, self.service_output_limit)
+                    return event.target, write_string
+            elif service is None and '*' in hostname:
+                host = hostname.split('*')[0]
+                output_list = []
+                for entry in service_statuses:
+                    if entry['host_name'].upper().startswith(host.upper()) and entry['service_description'] == 'PING':
                         if entry['current_state'] == '0':
                             state_string = format.color('OK', format.GREEN)
                         if entry['current_state'] == '1':
