@@ -94,6 +94,10 @@ class NagiosBot(bot.SimpleBot):
             for c in channels:
                 if c['name'] == channel:
                     c['topic'] = topic
+    def on_disconnect(self, event):
+        print "Disconnected, trying reconnect in 5 sec."
+        time.sleep(5)
+        self.connect(server, port=port, use_ssl=use_ssl, channel = [channel['name'] for channel in channels], ssl_options=ssl_options)
 
     @staticmethod            
     def print_help(conn, event, options):
