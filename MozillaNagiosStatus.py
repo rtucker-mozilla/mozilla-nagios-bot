@@ -51,6 +51,7 @@ class MozillaNagiosStatus:
         self.ackable_list = [None]*self.list_size
         self.nagios_log = NAGIOS_LOG
         self.nagios_cmd = NAGIOS_CMD
+        self.disallowed_ack = DISALLOWED_ACK
         self.oncall_file = ONCALL_FILE
         self.status_file = STATUS_FILE
         self.service_output_limit = SERVICE_OUTPUT_LIMIT
@@ -122,7 +123,6 @@ class MozillaNagiosStatus:
         elif self.act_ct > 0 or self.has_rolled == True:
             self.has_rolled = False
             self.act_ct = (self.act_ct + 1) % self.list_size
-
         if state == "UNKNOWN" or state == "WARNING" or state == "CRITICAL" or state == "UP" or state == "OK" or state == "DOWN":
             self.ackable_list[self.act_ct] = {'host':host, 'service': service, 'state':state, 'message':message}
             #return(self.act_ct + self.list_offset)
@@ -314,7 +314,10 @@ class MozillaNagiosStatus:
                 service = dict_object['service']
             except:
                 service is None
-            if service is None:
+            if service and service in self.disallowed_ack:
+                write_string = "%s: I'm sorry but you're not allowed to ACK this alert here. Please visit the appropriate nagios webui to ACK it there." % event.source
+                return event.target, write_string
+            elif service is None:
                 write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
                 return_string = "%s: The Host %s has been ack'd" % (event.source, host)  
             else:

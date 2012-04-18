@@ -210,6 +210,22 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: The Service db1.foo.bar.mozilla.com:MySQL Replication has been ack'd" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
+
+    def test_disallowed_ack_list(self):
+        self.assertEqual(self.tc.disallowed_ack[0], 'serverops_bugs')
+
+    def test_ack_service_by_index_disallowed(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,12):
+            service_line = "[1334695172] SERVICE NOTIFICATION: sysalertslist;db1.foo.bar.mozilla.com;serverops_bugs;CRITICAL;notify-by-sms;some critical bug that I don't want to ack"
+            self.tc.process_line(service_line, True)
+        message = "ack 110 test message"
+        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: I'm sorry but you're not allowed to ACK this alert here. Please visit the appropriate nagios webui to ACK it there." % (self.my_nick) )
+        self.tc.process_line(self.ack_host_line, True)
         
     def test_ack_host_by_index_after_half_cycle(self):
         self.tc.ackable_list = [None]*self.tc.list_size
