@@ -123,7 +123,7 @@ class MozillaNagiosStatus:
             self.has_rolled = False
             self.act_ct = (self.act_ct + 1) % self.list_size
 
-        if state == "WARNING" or state == "CRITICAL" or state == "UP" or state == "OK" or state == "DOWN":
+        if state == "UNKNOWN" or state == "WARNING" or state == "CRITICAL" or state == "UP" or state == "OK" or state == "DOWN":
             self.ackable_list[self.act_ct] = {'host':host, 'service': service, 'state':state, 'message':message}
             #return(self.act_ct + self.list_offset)
 
@@ -510,6 +510,8 @@ class MozillaNagiosStatus:
             elif l.state == "OK":
                 state_string = format.color(l.state, format.GREEN)
             elif l.state == "WARNING":
+                state_string = format.color(l.state, format.YELLOW)
+            elif l.state == "UNKNOWN":
                 state_string = format.color(l.state, format.YELLOW)
             elif l.state == "CRITICAL":
                 state_string = format.color(l.state, format.RED)

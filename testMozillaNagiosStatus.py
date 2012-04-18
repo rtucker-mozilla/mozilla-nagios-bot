@@ -198,6 +198,19 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(message, "%s: The Service fake-host.mozilla.org:root partition100 has been ack'd" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
 
+    def test_ack_host_by_index_after_one_cycle_long_service_message(self):
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
+        for i in range(0,12):
+            service_line = "[1334695172] SERVICE NOTIFICATION: sysalertslist;db1.foo.bar.mozilla.com;MySQL Replication;UNKNOWN;notify-by-sms;**ePN /usr/lib64/nagios/plugins/mozilla/check_mysql_replication: DBI connect(host=10.0.0.0:database=,username,...) failed: Cant connect to MySQL server on 10.0.0.0 (111) at (eval 6) line 30."
+            self.tc.process_line(service_line, True)
+        message = "ack 110 test message"
+        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Service db1.foo.bar.mozilla.com:MySQL Replication has been ack'd" % (self.my_nick) )
+        self.tc.process_line(self.ack_host_line, True)
+        
     def test_ack_host_by_index_after_half_cycle(self):
         self.tc.ackable_list = [None]*self.tc.list_size
         self.assertEqual(len(self.tc.ackable_list), 100)
@@ -281,31 +294,6 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.process_line(self.host_line, True)
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 102)
-        """for i in range(103,199):
-            self.tc.process_line(self.service_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 100)
-        self.tc.process_line(self.service_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 100)
-        for i in range(100,200):
-            self.tc.process_line(self.service_line, True)
-            self.assertEqual(self.tc.get_ack_number(), i - 1)
-        self.tc.process_line(self.service_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 100)
-        for i in range(100,120):
-            self.tc.process_line(self.service_line, True)
-            self.assertEqual(self.tc.get_ack_number(), i)
-        #Make sure that reading ack'd lines don't get added to the ackable_list
-        self.tc.process_line(self.ack_line, True)
-        self.tc.process_line(self.ack_line, True)
-        self.tc.process_line(self.ack_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 119)
-        for i in range(120,140):
-            self.tc.process_line(self.service_line, True)
-            self.assertEqual(self.tc.get_ack_number(), i)
-        self.tc.process_line(self.ack_line, True)
-        self.tc.process_line(self.ack_line, True)
-        self.tc.process_line(self.ack_line, True)
-        self.assertEqual(self.tc.get_ack_number(), 139)"""
 
     def test_get_channel_group(self):
         self.assertEqual(self.tc.get_channel_group('sysalertslist'), '#sysadmins')
