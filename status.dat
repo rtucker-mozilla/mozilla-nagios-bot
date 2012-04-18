@@ -454,9 +454,11 @@ servicestatus {
 	scheduled_downtime_depth=0
 	}
 
+        self.tc.ackable_list = [None]*self.tc.list_size
+        self.assertEqual(len(self.tc.ackable_list), 100)
 servicestatus {
 	host_name=db1.foo.mozilla.com
-	service_description=MySQL
+	service_description=mysql Replication
 	modified_attributes=0
 	check_command=
 	check_period=24x7
@@ -484,7 +486,7 @@ servicestatus {
 	last_time_warning=0
 	last_time_unknown=0
 	last_time_critical=0
-	plugin_output=Uptime: 18346  Threads: 199  Questions: 12026601  Slow queries: 1  Opens: 496  Flush tables: 1  Open tables: 489  Queries per second avg: 655.543
+	plugin_output=uptime: 18346  threads: 199  questions: 12026601  slow queries: 1  opens: 496  flush tables: 1  open tables: 489  queries per second avg: 655.543
 	long_plugin_output=
 	performance_data=
 	last_check=1334607246

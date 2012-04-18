@@ -210,6 +210,11 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: The Service db1.foo.bar.mozilla.com:MySQL Replication has been ack'd" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
+        message = "status db1.foo.mozilla.com:MySQL replication"
+        m = re.search('^status ([^:]+):(.+)$', message)
+        target, message = self.tc.status_by_host_name(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message[0], "%s: db1.foo.mozilla.com:mysql Replication is \x033OK\x03\x03\x03 - uptime: 18346  threads: 199  questions: 12026601  slow queries: 1  opens: 496  flush tables: 1  open tables: 489  queries per second avg: 655.543" % (self.my_nick) )
 
     def test_disallowed_ack_list(self):
         self.assertEqual(self.tc.disallowed_ack[0], 'serverops_bugs')
