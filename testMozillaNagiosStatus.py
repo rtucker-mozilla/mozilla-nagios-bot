@@ -69,6 +69,15 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Unable to find host' % self.my_nick)
 
+    def test_downtime_by_host_only(self):
+        self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime test-host.fake.mozilla.com 1m blah blah'
+        m = re.search('^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', message)
+        target, message = self.tc.downtime(self.event, message, m)
+        self.assertEqual(target, '#sysadmins')
+        self.assertEqual(message, '%s: Downtime for test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
+
     def test_downtime_by_index_host_only(self):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)

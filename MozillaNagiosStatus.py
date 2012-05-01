@@ -158,11 +158,12 @@ class MozillaNagiosStatus:
 
                 if service is not None:
                     write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    self.write_to_nagios_cmd(write_string)
                     return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
                 else:
                     write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    self.write_to_nagios_cmd(write_string)
                     return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
-                self.write_to_nagios_cmd(write_string)
         else:
             return event.target, "%s: Unable to find host" % (event.source)
 
@@ -171,27 +172,31 @@ class MozillaNagiosStatus:
             host = options.group(1)
             try: 
                 service = options.group(2)
+                duration = options.group(3)
+                original_duration = duration
+                comment = options.group(4)
             except:
                 service = None
-            if service == '':
+                duration = options.group(2)
+                original_duration = duration
+                comment = options.group(3)
+            if service == '' or service == '*':
                 service = None
-            duration = options.group(3)
-            original_duration = duration
-            comment = options.group(4)
-        except:
-                return event.target, "%s: Unable to downtime host" % (event.source, host) 
+        except Exception, e:
+            return event.target, "%s: Unable to downtime host %s" % (event.source, host) 
         if self.validate_host(host) is True:
             current_time = time.time() 
             m = re.search("(\d+)([dhms])", duration)
             if m:
                 duration = self.interval_to_seconds(m.group(1), m.group(2))
                 if service is not None:
-                    write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    self.write_to_nagios_cmd(write_string)
                     return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
                 else:
-                    write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    self.write_to_nagios_cmd(write_string)
                     return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
-                self.write_to_nagios_cmd(write_string)
         else:
             return event.target, "%s: Host Not Found %s" % (event.source, host) 
             
