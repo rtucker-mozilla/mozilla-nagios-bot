@@ -504,7 +504,7 @@ class MozillaNagiosStatus:
                 time.sleep(1)
                 file.seek(where)
             else:
-                m = re.search("^\[\d+\]\s(HOST|SERVICE) NOTIFICATION: ((?:sysalertsonly|guest|servicesalertslist|sysalertslist|buildteam|dougt|camino|seamonkey|tdsmirrors|sumo-dev|socorroalertlist|metrics|laura);(.*))$", line.strip())
+                m = re.search("^\[\d+\]\s(HOST|SERVICE) NOTIFICATION: ([^;]+;(.*))$", line.strip())
                 if m is not None:
                     self.process_line(line)
     def process_line(self, line, is_test=False):
