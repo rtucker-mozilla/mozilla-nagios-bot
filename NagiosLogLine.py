@@ -75,7 +75,7 @@ class NagiosLogLine:
             self.is_notification = False
 
     def _build_notification_list(self):
-        m = re.search("^\[\d+\]\s(HOST|SERVICE) NOTIFICATION: ((?:sysalertsonly|guest|servicesalertslist|sysalertslist|buildteam|dougt|camino|seamonkey|tdsmirrors|sumo-dev|socorroalertlist|metrics|laura);(.*))$", self.line)
+        m = re.search("^\[\d+\]\s(HOST|SERVICE) NOTIFICATION: ([^;]+;(.*))$", self.line)
         self.notification_list = m.group(2).split(";")
 
     def _get_notification_recipient(self):
