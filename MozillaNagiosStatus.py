@@ -554,8 +554,10 @@ class MozillaNagiosStatus:
         if is_test is False:
             if self.is_muted(channel) is False:
                 self.connection.send_message(channel, write_string)
-        else:
+        elif channel:
             return channel, write_string
+        else:
+            return None
 
     def write_to_nagios_cmd(self, write_string):
         try:
@@ -571,7 +573,8 @@ class MozillaNagiosStatus:
         try:
             return self.channel_groups[channel_group]
         except:
-            return self.default_channel_group
+            return None
+            #return self.default_channel_group
 
 
     def parseConf(self, inputFile):
