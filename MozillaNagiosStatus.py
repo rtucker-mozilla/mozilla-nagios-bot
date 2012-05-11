@@ -67,8 +67,8 @@ class MozillaNagiosStatus:
 
     def build_regex_list(self):
         self.message_commands.append({'regex':'^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', 'callback':self.ack})
-        self.message_commands.append({'regex':'^\s*ack ([^:]+):([^:]+)\s*$', 'callback':self.ack_by_host_with_service})
-        self.message_commands.append({'regex':'^\s*ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
+        self.message_commands.append({'regex':'^ack ([^:]+):([^:]+)\s*$', 'callback':self.ack_by_host_with_service})
+        self.message_commands.append({'regex':'^ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
         self.message_commands.append({'regex':'^unack (\d+)$', 'callback':self.unack})
         self.message_commands.append({'regex':'^unack ([^:]+)\s*$', 'callback':self.unack_by_host})
         self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
