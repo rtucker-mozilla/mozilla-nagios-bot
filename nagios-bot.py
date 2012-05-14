@@ -7,8 +7,8 @@ import os
 from settings import *
 import subprocess
 import time
-from MozillaIRCPager import MozillaIRCPager
-from MozillaNagiosStatus import MozillaNagiosStatus
+#from MozillaIRCPager import MozillaIRCPager
+#from MozillaNagiosStatus import MozillaNagiosStatus
 class NagiosBot(bot.SimpleBot):
     my_nick = ''
     to_me = False
@@ -19,8 +19,8 @@ class NagiosBot(bot.SimpleBot):
     ### message_commands is a list of dictionary objects. The regex object is the regex to match, the function object is the function name to call at a match
 
     plugins = [
-                {'plugin':MozillaIRCPager},
-                {'plugin':MozillaNagiosStatus},
+                #{'plugin':MozillaIRCPager},
+                #{'plugin':MozillaNagiosStatus},
               ]
     help_commands = []
     message_commands = []
@@ -67,7 +67,9 @@ class NagiosBot(bot.SimpleBot):
         We need a state machine.
         start: -> s1
 
-        s1: If we see 'End of /MOTD command', send creds to nickserv. -> s3
+        s1: If we see 'End of /MOTD command'.
+            If we need to register. send creds to nickserv. -> s3
+            If we don't need to register. -> s4.
 
         s2: Send creds to nickserv. -> s3
 
@@ -80,9 +82,7 @@ class NagiosBot(bot.SimpleBot):
             If we didn't see the right thing after MESSEGE_BUFFER messeges.
             Send creds to nickserv. -> s2
 
-        s4: JOIN ALL OF THE CHANNELS! -> s5
-
-        s5: Do nothing.
+        s4: JOIN ALL OF THE CHANNELS! ...and then do nothing.
         """
         print event.params  # For debug
         to_nickserv = "IDENTIFY {0}".format(identify_pass)
@@ -92,8 +92,13 @@ class NagiosBot(bot.SimpleBot):
         if self.state == 1:
             if (len(event.params) > 0 and
                     event.params[0] == "End of /MOTD command."):
-                nagios_bot.send_message("NickServ", to_nickserv)
-                self.state = 3
+                if REGISTER:
+                    nagios_bot.send_message("NickServ", to_nickserv)
+                    self.state = 3
+                else:
+                    print "Not going to register."
+                    self.join_channels()
+                    self.state = 4
                 return
 
         if self.state == 2:

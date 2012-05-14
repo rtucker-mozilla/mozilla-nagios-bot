@@ -2,6 +2,7 @@ port = 6667
 use_ssl = False
 bot_name = '<nagios-bot_name>'
 server = 'irc.yourhost.com'
+REGISTER = False
 channels = [
         '#channelhere password',
     ]
