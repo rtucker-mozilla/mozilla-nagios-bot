@@ -37,7 +37,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.event.source = 'rtucker'
         self.event.target = '#sysadmins'
         self.connection = Mock()
-        self.tc = MozillaIRCPager(self.connection)
+        self.tc = MozillaIRCPager(self.connection, [])
 
     def test_get_page_plugin(self):
         plugins = self.tc.return_plugins()

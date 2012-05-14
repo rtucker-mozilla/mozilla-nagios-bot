@@ -45,7 +45,7 @@ class MozillaIRCPager:
     def page(self, event, message, options):
         should_page = False
         recipient = options.group(1)
-        message = options.group(2)
+        message = "%s(%s)" % (options.group(2), event.source)
         if recipient == "oncall":
             recipient = self.get_oncall_from_file()
         ##Check that we have a valid message and recipient and set should_page to true
