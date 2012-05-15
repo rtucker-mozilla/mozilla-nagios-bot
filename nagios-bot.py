@@ -88,10 +88,10 @@ class NagiosBot(bot.SimpleBot):
         to_nickserv = "IDENTIFY {0}".format(identify_pass)
         accept_messeges = ('Password accepted - you are now recognized.',
                 'You are already identified.')
-
         if self.state == 1:
             if (len(event.params) > 0 and
                     event.params[0] == "End of /MOTD command."):
+                import pdb; pdb.set_trace()
                 if REGISTER:
                     nagios_bot.send_message("NickServ", to_nickserv)
                     self.state = 3
