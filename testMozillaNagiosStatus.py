@@ -325,11 +325,27 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 102)
 
+    def test_process_line_with_unknown_contacts(self):
+        self.tc.process_line(self.service_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        self.tc.process_line(self.host_line, True)
+        self.tc.process_line(self.service_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 102)
+        service_line = "[1318882274] SERVICE NOTIFICATION: unknowncontacthere;fake-host.mozilla.org;root partition;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):"
+        self.tc.process_line(service_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 102)
+        self.tc.process_line(self.service_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 103)
+
     def test_get_channel_group(self):
         self.assertEqual(self.tc.get_channel_group('sysalertslist'), '#sysadmins')
 
-    def test_get_channel_group_not_found(self):
+    """
+        This test is no longer valid, we did away with a default contact channel
+    """
+    """def test_get_channel_group_not_found(self):
         self.assertEqual(self.tc.get_channel_group('thisshouldnevermatchblahblah'), '#default')
+    """
 
     def test_get_page_plugin(self):
         plugins = self.tc.return_plugins()

@@ -7,8 +7,8 @@ import os
 from settings import *
 import subprocess
 import time
-#from MozillaIRCPager import MozillaIRCPager
-#from MozillaNagiosStatus import MozillaNagiosStatus
+from MozillaIRCPager import MozillaIRCPager
+from MozillaNagiosStatus import MozillaNagiosStatus
 class NagiosBot(bot.SimpleBot):
     my_nick = ''
     to_me = False
@@ -19,8 +19,8 @@ class NagiosBot(bot.SimpleBot):
     ### message_commands is a list of dictionary objects. The regex object is the regex to match, the function object is the function name to call at a match
 
     plugins = [
-                #{'plugin':MozillaIRCPager},
-                #{'plugin':MozillaNagiosStatus},
+                {'plugin':MozillaIRCPager},
+                {'plugin':MozillaNagiosStatus},
               ]
     help_commands = []
     message_commands = []
@@ -91,7 +91,6 @@ class NagiosBot(bot.SimpleBot):
         if self.state == 1:
             if (len(event.params) > 0 and
                     event.params[0] == "End of /MOTD command."):
-                import pdb; pdb.set_trace()
                 if REGISTER:
                     nagios_bot.send_message("NickServ", to_nickserv)
                     self.state = 3

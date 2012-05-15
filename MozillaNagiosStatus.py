@@ -509,6 +509,8 @@ class MozillaNagiosStatus:
                     self.process_line(line)
     def process_line(self, line, is_test=False):
         l = NagiosLogLine(line)
+        if l.notification_recipient not in self.channel_groups:
+            return
         is_ack = False
         if l.is_service:
             state_string = None
