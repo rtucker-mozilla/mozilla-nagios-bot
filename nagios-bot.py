@@ -7,18 +7,20 @@ import os
 from settings import *
 import subprocess
 import time
-from MozillaIRCPager import MozillaIRCPager
-from MozillaNagiosStatus import MozillaNagiosStatus
+#from MozillaIRCPager import MozillaIRCPager
+#from MozillaNagiosStatus import MozillaNagiosStatus
 class NagiosBot(bot.SimpleBot):
     my_nick = ''
     to_me = False
     message = ''
-    has_registered = False
+    state = 1
+    MESSEGE_BUFFER = 10
+    buffer_state = MESSEGE_BUFFER
     ### message_commands is a list of dictionary objects. The regex object is the regex to match, the function object is the function name to call at a match
 
     plugins = [
-                {'plugin':MozillaIRCPager},
-                {'plugin':MozillaNagiosStatus},
+                #{'plugin':MozillaIRCPager},
+                #{'plugin':MozillaNagiosStatus},
               ]
     help_commands = []
     message_commands = []
@@ -56,22 +58,79 @@ class NagiosBot(bot.SimpleBot):
                                 self.send_message(event.target, "%s: %s From Exception I'm sorry but I don't understand your command" % (e, event.source) )
                 if _is_found is False:
                     self.send_message(event.target, "%s: I'm sorry but I don't understand your command" % (event.source) )
+
     def on_notice(self, event):
         print event.params
+        pass
     def on_any(self, event):
-        #print event.params
-        #print dir(event)
-        #print event.message
+        """
+        We need a state machine.
+        start: -> s1
+
+        s1: If we see 'End of /MOTD command'.
+            If we need to register. send creds to nickserv. -> s3
+            If we don't need to register. -> s4.
+
+        s2: Send creds to nickserv. -> s3
+
+        s3: Check the next MESSEGE_BUFFER messeges for registration
+            confirmation.
+
+            If one of the next MESSEGE_BUFFER messeges is registration
+            confirmation from nickserv. -> s4.
+
+            If we didn't see the right thing after MESSEGE_BUFFER messeges.
+            Send creds to nickserv. -> s2
+
+        s4: JOIN ALL OF THE CHANNELS! ...and then do nothing.
+        """
+        print event.params  # For debug
+        to_nickserv = "IDENTIFY {0}".format(identify_pass)
+        accept_messeges = ('Password accepted - you are now recognized.',
+                'You are already identified.')
+
+        if self.state == 1:
+            if (len(event.params) > 0 and
+                    event.params[0] == "End of /MOTD command."):
+                if REGISTER:
+                    nagios_bot.send_message("NickServ", to_nickserv)
+                    self.state = 3
+                else:
+                    print "Not going to register."
+                    self.join_channels()
+                    self.state = 4
+                return
+
+        if self.state == 2:
+            nagios_bot.send_message("NickServ", to_nickserv)
+            time.sleep(2)
+            self.state == 3
+            return
+
+        # State 3 should really move to the on_notice function, but that would
+        # be confusing.
+        if self.state == 3:
+            if (len(event.params) > 0 and event.params[0] in accept_messeges
+                    and event.source == "NickServ"):
+                print "Registered!!!"
+                self.join_channels()
+                self.state = 4
+                return
+            else:
+                self.buffer_state -= 1
+                return
+            if self.buffer_state > 0:
+            # We need to retry sending nickserv a messege
+                self.state = 2
+                self.buffer_state = self.MESSEGE_BUFFER
+                return
         if event.command == "TOPIC" or event.command == 'RPL_LIST' or event.command == 'RPL_TOPIC' or event.command == 'RPL_TOPICWHOTIME':
             self.set_topic(event)
-        if not self.has_registered:
-            try:
-                if event.params[0] == "End of /MOTD command.":
-                    time.sleep(2)
-                    nagios_bot.send_message("NickServ", "IDENTIFY %s" % (identify_pass))
-                    self.has_registered = True
-            except:
-                pass
+
+    def join_channels(self):
+        print "Joining channels..."
+        for channel in channels:
+            self.join_channel(channel['name'])
 
     """ Handler for when the bot joins a room.
         Bot will ask for the topic and then it will get caught by the on_any handler
@@ -97,21 +156,23 @@ class NagiosBot(bot.SimpleBot):
     def on_disconnect(self, event):
         print "Disconnected, trying reconnect in 5 sec."
         time.sleep(5)
-        self.connect(server, port=port, use_ssl=use_ssl, channel = [channel['name'] for channel in channels], ssl_options=ssl_options)
+        # We need to reregister
+        self.state = 1
+        self.connect(server, port=port, use_ssl=use_ssl, ssl_options=ssl_options)
 
-    @staticmethod            
+    @staticmethod
     def print_help(conn, event, options):
         messages = []
         messages.append("page <id> (Optional) <recipient> (Required) <message> (Reqired)")
         print event.target
         for message in messages:
             conn.send_message(event.target, message)
-    
+
 
 if __name__ == "__main__":
     nagios_bot = NagiosBot(bot_name)
     nagios_bot.bot_name = bot_name
-    nagios_bot.connect(server, port=port, use_ssl=use_ssl, channel = [channel['name'] for channel in channels], ssl_options=ssl_options)
+    nagios_bot.connect(server, port=port, use_ssl=use_ssl, ssl_options=ssl_options)
     nagios_bot.load_plugins()
     nagios_bot.start()
     nagios_bot.register_listener('RPL_TOPIC', on_topic)
