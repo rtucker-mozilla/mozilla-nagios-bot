@@ -511,6 +511,8 @@ class MozillaNagiosStatus:
         l = NagiosLogLine(line)
         if l.notification_recipient not in self.channel_groups:
             return
+        if self.is_muted(l.notification_recipient):
+            return
         is_ack = False
         if l.is_service:
             state_string = None
