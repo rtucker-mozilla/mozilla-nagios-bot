@@ -71,6 +71,7 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
         self.message_commands.append({'regex':'^unack (\d+)$', 'callback':self.unack})
         self.message_commands.append({'regex':'^unack ([^:]+)\s*$', 'callback':self.unack_by_host})
+        self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
         self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status$', 'callback':self.nagios_status})
@@ -98,6 +99,7 @@ class MozillaNagiosStatus:
             'unack <host>',
             'status <host>',
             'status <host:service>',
+            'status <alert_index>',
             'downtime <alert_id> <interval><dhms> <message> <interval> is the how long <dhms> is days|hours|minutes|seconds',
             'downtime <host:service> <interval><dhms> <message> <interval> is the how long <dhms> is days|hours|minutes|seconds',
             'mute',
@@ -607,6 +609,33 @@ class MozillaNagiosStatus:
         except IOError:
             return False
 
+    def status_by_index(self, event, message, options):
+        conf = self.parseConf(self.status_file)
+        ret = None
+        host_statuses =  []
+        service_statuses =  []
+        try:
+            dict_object = self.ackable_list[int(options.group(1)) - self.list_offset]
+            host = dict_object['host']
+            try:
+                service = dict_object['service']
+            except:
+                service is None
+            for entry in conf:
+                if service is None:
+                    if entry[0] == 'hoststatus':
+                        ret = entry[1]
+                        break
+                elif service is not None and '*' not in service:
+                    if entry[0] == 'servicestatus' and entry[1]['service_description'].upper() == service:
+                        ret = entry[1]
+                        break
+        except:
+            return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
+
+        if not ret:
+            return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
+        return event.target, "%s: %s %s" % (event.source, host, ret['plugin_output']) 
     def status_by_host_name(self, event, message, options):
         conf = self.parseConf(self.status_file)
         service_statuses = []
