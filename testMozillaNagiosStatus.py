@@ -337,6 +337,24 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 103)
 
+    def test_page_by_index(self):
+        self.tc.process_line(self.service_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        cmd = "page 100 %s" % (self.event.source)
+        m = re.search('^page\s+(\d+)\s+(\w+)\s*$', cmd)
+        target, message = self.tc.page_with_alert_number(self.event, cmd, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: %s has been paged" % (self.my_nick, self.event.source) )
+
+    def test_page_by_bad_index(self):
+        self.tc.process_line(self.service_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        cmd = "page 101 %s" % (self.event.source)
+        m = re.search('^page\s+(\d+)\s+(\w+)\s*$', cmd)
+        target, message = self.tc.page_with_alert_number(self.event, cmd, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: Sorry, but no alert exists at this index" % (self.my_nick) )
+
     def test_get_channel_group(self):
         self.assertEqual(self.tc.get_channel_group('sysalertslist'), '#sysadmins')
 

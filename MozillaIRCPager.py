@@ -29,7 +29,7 @@ from MozillaNagiosStatus_settings import ONCALL_FILE
 from settings import logger
 import re
 class MozillaIRCPager:
-    def __init__(self, connection, channels):
+    def __init__(self, connection, channels=[]):
         self.PAGE_SCRIPT = PAGE_SCRIPT
         self.oncall_file = ONCALL_FILE
         self.message_commands = []

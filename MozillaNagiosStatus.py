@@ -812,11 +812,12 @@ class MozillaNagiosStatus:
             m = MozillaIRCPager(self.connection)
             m.page(event, message, options)
             m = None
-        except NoneType:
+        except TypeError, e:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
         except Exception, e:
             return event.target, "Exception: %s" % (e) 
             return event.target, "%s: %s could not be paged" % (event.source, recipient) 
+        return event.target, "%s: %s has been paged" % (event.source, recipient) 
 
     def get_hms_from_seconds(self, input_seconds):                                                                                                                                                                                                                    
         from datetime import datetime, timedelta
