@@ -811,14 +811,7 @@ class MozillaNagiosStatus:
                 message = "%s:%s is %s - %s" % (dict_object['host'],dict_object['service'], dict_object['message'], dict_object['state'])
             else:
                 message = "%s is %s - %s" % (dict_object['host'], dict_object['state'], dict_object['message'])
-            message_append = "(%s)" % (event.source)
-            len_message = len(message)
-            len_message_append = len(message_append)
-
-            if len_message + len_message_append <= MAX_MESSAGE_LEN:
-                final_message = "%s%s" % (message, message_append)
-            else:
-                final_message = "%s%s" % (message[0:MAX_MESSAGE_LEN - len_message_append], message_append)
+            final_message = "%s(%s)" % (message[0:MAX_MESSAGE_LEN - (len(event.source) + 2)], event.source)
             m = MozillaIRCPager(self.connection)
             m.page(event, final_message, options, True)
             m = None
