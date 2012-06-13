@@ -54,11 +54,12 @@ class MozillaIRCPager:
         """
 
         should_page = False
+        import pdb; pdb.set_trace()
         if is_indexed_page:
             recipient = options.group(2)
         else:
             recipient = options.group(1)
-        message = "%s(%s)" % (options.group(2), event.source)
+            message = "%s(%s)" % (options.group(2), event.source)
         if recipient == "oncall":
             recipient = self.get_oncall_from_file()
         ##Check that we have a valid message and recipient and set should_page to true
