@@ -803,16 +803,24 @@ class MozillaNagiosStatus:
         return event.target, "%s: %s currently has the pager" % (event.source, self.get_oncall_from_file()) 
 
     def page_with_alert_number(self, event, message, options):
+        MAX_MESSAGE_LEN = 160
         try:
             dict_object = self.ackable_list[int(options.group(1)) - self.list_offset]
             recipient = options.group(2)
             if dict_object['service'] is not None:
-                message = "%s:%s is %s - %s (%s)" % (dict_object['host'],dict_object['service'], dict_object['message'], dict_object['state'], event.source)
+                message = "%s:%s is %s - %s" % (dict_object['host'],dict_object['service'], dict_object['message'], dict_object['state'])
             else:
-                message = "%s is %s - %s (%s)" % (dict_object['host'], dict_object['state'], dict_object['message'], event.source)
+                message = "%s is %s - %s" % (dict_object['host'], dict_object['state'], dict_object['message'])
+            message_append = "(%s)" % (event.source)
+            len_message = len(message)
+            len_message_append = len(message_append)
 
+            if len_message + len_message_append <= MAX_MESSAGE_LEN:
+                final_message = "%s%s" % (message, message_append)
+            else:
+                final_message = "%s%s" % (message[0:MAX_MESSAGE_LEN - len_message_append], message_append)
             m = MozillaIRCPager(self.connection)
-            m.page(event, message, options, True)
+            m.page(event, final_message, options, True)
             m = None
         except TypeError, e:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 

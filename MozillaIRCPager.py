@@ -54,7 +54,6 @@ class MozillaIRCPager:
         """
 
         should_page = False
-        import pdb; pdb.set_trace()
         if is_indexed_page:
             recipient = options.group(2)
         else:
