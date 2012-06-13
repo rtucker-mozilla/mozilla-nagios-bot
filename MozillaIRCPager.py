@@ -42,9 +42,22 @@ class MozillaIRCPager:
     def return_plugins(self):
         return self.message_commands
 
-    def page(self, event, message, options):
+    def page(self, event, message, options, is_indexed_page=False):
+        """
+            call a shell script passing recipient then message to send a page to a person
+            param: event - the irc event that occured
+            param: message - the message to send
+            param: options - regular expression object that contains the message from irc
+            param: is_indexed_page - variable to be set if we're paging based on an alert index
+                   If set to true, the recipient is the options.group(2) instead of options.group(1)
+                   This is a bit hacky and should be refactored at a later point
+        """
+
         should_page = False
-        recipient = options.group(1)
+        if is_indexed_page:
+            recipient = options.group(2)
+        else:
+            recipient = options.group(1)
         message = "%s(%s)" % (options.group(2), event.source)
         if recipient == "oncall":
             recipient = self.get_oncall_from_file()

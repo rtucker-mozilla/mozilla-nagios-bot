@@ -812,7 +812,7 @@ class MozillaNagiosStatus:
                 message = "%s is %s - %s (%s)" % (dict_object['host'], dict_object['state'], dict_object['message'], event.source)
 
             m = MozillaIRCPager(self.connection)
-            m.page(event, message, options)
+            m.page(event, message, options, True)
             m = None
         except TypeError, e:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
