@@ -378,8 +378,7 @@ class NagiosStatusTest(unittest.TestCase):
         self.connection = Mock()
         self.tc = MozillaNagiosStatus(self.connection, [])
         self.my_nick = self.event.source
-        self.service_line = '[1318882274] SERVICE NOTIFICATION: sysalertslist;db1.foo.mozilla.com;TEST;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5% inode=99%):'
-        self.host_line = "[1313158996] HOST NOTIFICATION: sysalertslist;db1.foo.mozilla.com;DOWN;host-notify-by-email;PING CRITICAL - Packet loss = 100%"
+        self.service_line = '[1318882274] SERVICE NOTIFICATION: sysalertslist;db2.foo.mozilla.com;mysql replication;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5% inode=99%):'
 
     def test_empty_host_status(self):
         cmd = "status db2.foo.mozilla.com"
@@ -420,7 +419,7 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db1.foo.mozilla.com PING OK - Packet loss = 0%%, RTA = 0.80 ms" % self.event.source)
+        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
 
     def test_host_service_status_multiple_entriesby_index(self):
         self.tc.ackable_list = [None]*self.tc.list_size
@@ -430,7 +429,7 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db1.foo.mozilla.com PING OK - Packet loss = 0%%, RTA = 0.80 ms" % self.event.source)
+        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
         self.tc.process_line(self.service_line, True)
         self.tc.process_line(self.service_line, True)
         self.tc.process_line(self.service_line, True)
@@ -439,7 +438,7 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db1.foo.mozilla.com PING OK - Packet loss = 0%%, RTA = 0.80 ms" % self.event.source)
+        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
         cmd = "status 105"
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
@@ -462,7 +461,7 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db1.foo.mozilla.com PING OK - Packet loss = 0%%, RTA = 0.80 ms" % self.event.source)
+        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
 
     def test_basic_host_status_wildcard_service_from_start(self):
         cmd = "status db2.foo.mozilla.com:Sw*"

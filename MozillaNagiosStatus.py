@@ -619,6 +619,7 @@ class MozillaNagiosStatus:
             host = dict_object['host']
             try:
                 service = dict_object['service']
+                service = service.upper()
             except:
                 service is None
             for entry in conf:
@@ -630,11 +631,12 @@ class MozillaNagiosStatus:
                     if entry[0] == 'servicestatus' and entry[1]['service_description'].upper() == service:
                         ret = entry[1]
                         break
-        except:
+        except Exception, e:
             return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
 
         if not ret:
             return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
+
         return event.target, "%s: %s %s" % (event.source, host, ret['plugin_output']) 
     def status_by_host_name(self, event, message, options):
         conf = self.parseConf(self.status_file)
