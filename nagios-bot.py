@@ -44,13 +44,19 @@ class NagiosBot(bot.SimpleBot):
                         if hc.startswith(help_command):
                             sendable_help_messages.append(hc)
                 else:
+                    abbreviated_help_message = 'Available Commands: '
+
+                    holder = []
                     for hc in self.help_commands:
-                        sendable_help_messages.append(hc)
+                        new_message = hc.split()[0].strip()
+                        holder.append(new_message) if new_message not in holder else None
+
+                    for new_message in holder:
+                        abbreviated_help_message += "| %s " % (new_message.replace("|", " | "))
+                    sendable_help_messages.append(abbreviated_help_message)
                 if len(sendable_help_messages) > 0:
                     if help_command != '':
                         self.send_message(event.target, "%s: Here is usage for %s" % (event.source, help_command))
-                    else:
-                        self.send_message(event.target, "%s: Here is a list of available commands" % (event.source))
                     for hc in sendable_help_messages:
                         self.send_message(event.target, "%s" % (hc))
                 else:
