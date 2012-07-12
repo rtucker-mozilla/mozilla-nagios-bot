@@ -72,6 +72,8 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^unack (\d+)$', 'callback':self.unack})
         self.message_commands.append({'regex':'^unack ([^:]+)\s*$', 'callback':self.unack_by_host})
         self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
+        self.message_commands.append({'regex':'^recheck (\d+)$', 'callback':self.recheck_by_index})
+        self.message_commands.append({'regex':'^recheck ([^:]+)\s*$', 'callback':self.recheck_by_host})
         self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status$', 'callback':self.nagios_status})
@@ -97,6 +99,8 @@ class MozillaNagiosStatus:
             'ack <host> <reason for ack>',
             'unack <id_of alert>',
             'unack <host>',
+            'recheck <id_of alert>',
+            'recheck <host>',
             'status <host>',
             'status <host:service>',
             'status <alert_index>',
@@ -609,6 +613,32 @@ class MozillaNagiosStatus:
         except IOError:
             return False
 
+    def recheck_by_index(self, event, message, options):
+        try:
+            dict_object = self.ackable_list[int(options.group(1)) - self.list_offset]
+            host = dict_object['host']
+            return self.recheck(event, host)
+        except Exception, e:
+            return event.target, "%s Sorry, but I'm unable to recheck" % (event.source) 
+
+    def recheck_by_host(self, event, message, options):
+        try:
+            host = options.group(1)
+            return self.recheck(event, host)
+        except Exception, e:
+            return event.target, "%s Sorry, but I'm unable to recheck" % (event.source) 
+
+    def recheck(self, event, host):
+        try:
+            write_string = "[%lu] SCHEDULE_FORCED_HOST_SVC_CHECKS;%s;%lu\n" % (int(time.time()), host, int(time.time()))
+            self.write_to_nagios_cmd(write_string)
+            write_string = "[%lu] SCHEDULE_FORCED_HOST_CHECK;%s;%lu\n" % (int(time.time()), host, int(time.time()))
+            self.write_to_nagios_cmd(write_string)
+            return event.target, "%s: %s is scheduled to rechecked" % (event.source, host) 
+        except Exception, e:
+            return event.target, "%s Sorry, but I'm unable to recheck" % (event.source) 
+
+        return event.target, "%s: %s is scheduled to rechecked" % (event.source, host) 
     def status_by_index(self, event, message, options):
         conf = self.parseConf(self.status_file)
         ret = None

@@ -25,7 +25,6 @@ class NagiosBot(bot.SimpleBot):
     help_commands = []
     message_commands = []
     def load_plugins(self):
-        self.message_commands.append({'class':NagiosBot, 'regex':'help$', 'function':'print_help'})
         for plugin in self.plugins:
             plugin = plugin['plugin'](self, channels)
             for mc in plugin.return_plugins():
@@ -35,10 +34,28 @@ class NagiosBot(bot.SimpleBot):
     def on_channel_message(self, event):
         if re.search('^%s[,: ]' % self.bot_name, event.message):
             self.message = re.sub('^%s[,: ]+' % self.bot_name, '', event.message).strip()
-            if self.message == 'help':
-                self.send_message(event.target, "%s: Here is a list of available commands" % (event.source))
-                for hc in self.help_commands:
-                    self.send_message(event.target, "%s" % (hc))
+            if self.message.startswith('help'):
+                sendable_help_messages = []
+                help_command = ''
+                m = re.search('help\s(.*)', self.message)
+                if m:
+                    help_command = m.group(1)
+                    for hc in self.help_commands:
+                        if hc.startswith(help_command):
+                            sendable_help_messages.append(hc)
+                else:
+                    for hc in self.help_commands:
+                        sendable_help_messages.append(hc)
+                if len(sendable_help_messages) > 0:
+                    if help_command != '':
+                        self.send_message(event.target, "%s: Here is usage for %s" % (event.source, help_command))
+                    else:
+                        self.send_message(event.target, "%s: Here is a list of available commands" % (event.source))
+                    for hc in sendable_help_messages:
+                        self.send_message(event.target, "%s" % (hc))
+                else:
+                    self.send_message(event.target, "%s: No help available for command %s " % (event.source, help_command))
+
             else:
                 _is_found = False
                 for message_command in self.message_commands:
@@ -158,15 +175,6 @@ class NagiosBot(bot.SimpleBot):
         # We need to reregister
         self.state = 1
         self.connect(server, port=port, use_ssl=use_ssl, ssl_options=ssl_options)
-
-    @staticmethod
-    def print_help(conn, event, options):
-        messages = []
-        messages.append("page <id> (Optional) <recipient> (Required) <message> (Reqired)")
-        print event.target
-        for message in messages:
-            conn.send_message(event.target, message)
-
 
 if __name__ == "__main__":
     nagios_bot = NagiosBot(bot_name)
