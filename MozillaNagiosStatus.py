@@ -623,7 +623,7 @@ class MozillaNagiosStatus:
 
     def recheck_by_host(self, event, message, options):
         try:
-            host = options.group(1)
+            host = options.group(1).split(":")[0]
             return self.recheck(event, host)
         except Exception, e:
             return event.target, "%s Sorry, but I'm unable to recheck" % (event.source) 

@@ -52,7 +52,7 @@ class NagiosBot(bot.SimpleBot):
                         holder.append(new_message) if new_message not in holder else None
 
                     for new_message in holder:
-                        abbreviated_help_message += "| %s " % (new_message.replace("|", " | "))
+                        abbreviated_help_message += "| %s " % (new_message.split("|")[0])
                     sendable_help_messages.append(abbreviated_help_message)
                 if len(sendable_help_messages) > 0:
                     if help_command != '':
