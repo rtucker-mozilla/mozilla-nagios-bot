@@ -73,7 +73,7 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^unack ([^:]+)\s*$', 'callback':self.unack_by_host})
         self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
         self.message_commands.append({'regex':'^recheck (\d+)$', 'callback':self.recheck_by_index})
-        self.message_commands.append({'regex':'^recheck ([^:]+)\s*$', 'callback':self.recheck_by_host})
+        self.message_commands.append({'regex':'^recheck (.*)\s*$', 'callback':self.recheck_by_host})
         self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status$', 'callback':self.nagios_status})
