@@ -538,12 +538,12 @@ class MozillaNagiosStatus:
             if is_ack is False:
                 self.ackable(l.host, l.service, l.state, l.message)
                 try:
-                    write_string = "[%i] %s:%s is %s: %s" % (self.get_ack_number() , l.host, l.service, state_string, l.message)
+                    write_string = "%s [%i] %s:%s is %s: %s" % (l.time_string, self.get_ack_number() , l.host, l.service, state_string, l.message)
                 except:
-                    write_string = "%s:%s is %s: %s" % (l.host, l.service, state_string, l.message)
+                    write_string = "%s %s:%s is %s: %s" % (l.time_string, l.host, l.service, state_string, l.message)
             else:
                 #message = "%s;%s" % (m.group(3).split(";")[4], m.group(3).split(";")[5])
-                write_string = "%s:%s is %s: %s" % (l.host, l.service, state_string, l.message)
+                write_string = "%s %s:%s is %s: %s" % (l.time_string, l.host, l.service, state_string, l.message)
         else:
             if re.search("ACKNOWLEDGEMENT", l.state):
                 is_ack = True
@@ -556,10 +556,10 @@ class MozillaNagiosStatus:
                 state_string = format.color(l.state, format.RED)
             if is_ack is False:
                 self.ackable(l.host, None, l.state, l.message)
-                write_string = "[%i] %s is %s :%s" % (self.get_ack_number(), l.host, state_string, l.message)
+                write_string = "%s [%i] %s is %s :%s" % (l.time_string, self.get_ack_number(), l.host, state_string, l.message)
             else:
                 state_string = format.color(l.state, format.BLUE)
-                write_string = "%s is %s :%s" % (l.host, state_string, l.message)
+                write_string = "%s %s is %s :%s" % (l.time_string, l.host, state_string, l.message)
         channel = self.get_channel_group(l.notification_recipient)
         if is_test is False:
             if self.is_muted(channel) is False:

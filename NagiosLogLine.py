@@ -22,11 +22,12 @@
 # them with the notice and other provisions required by the GPLv2 License. If
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
-
+import datetime
 import re
 class NagiosLogLine:
     def __init__(self, line):
         self.is_service = False
+        self.time_string = datetime.datetime.now().strftime("%a %H:%m:%S")
         self.line = line.strip()
         self.notification_list = []
         self.notification_recipient = None
