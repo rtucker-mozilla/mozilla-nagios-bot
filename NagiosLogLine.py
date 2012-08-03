@@ -24,10 +24,11 @@
 # this file under either the MPL or the GPLv2 License.
 import datetime
 import re
+from time import gmtime, strftime
 class NagiosLogLine:
     def __init__(self, line):
         self.is_service = False
-        self.time_string = datetime.datetime.now().strftime("%a %H:%M:%S")
+        self.time_string = self._get_time_string()
         self.line = line.strip()
         self.notification_list = []
         self.notification_recipient = None
@@ -45,6 +46,10 @@ class NagiosLogLine:
             self.service = self._get_service()
             self.state = self._get_state()
             self.message = self._get_message()
+
+    def _get_time_string(self):
+        tz = strftime("%Z", gmtime())
+        return "%s %s" % (datetime.datetime.now().strftime("%a %H:%M:%S"), tz)
 
     def _get_host(self):
         return self.notification_list[1]
