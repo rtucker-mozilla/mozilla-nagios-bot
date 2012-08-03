@@ -635,11 +635,11 @@ class MozillaNagiosStatus:
             self.write_to_nagios_cmd(write_string)
             write_string = "[%lu] SCHEDULE_FORCED_HOST_CHECK;%s;%lu\n" % (int(time.time()), host, int(time.time()))
             self.write_to_nagios_cmd(write_string)
-            return event.target, "%s: %s is scheduled to rechecked" % (event.source, host) 
+            return event.target, "%s: %s is scheduled to be rechecked" % (event.source, host) 
         except Exception, e:
             return event.target, "%s Sorry, but I'm unable to recheck" % (event.source) 
 
-        return event.target, "%s: %s is scheduled to rechecked" % (event.source, host) 
+        return event.target, "%s: %s is scheduled to be rechecked" % (event.source, host) 
     def status_by_index(self, event, message, options):
         conf = self.parseConf(self.status_file)
         ret = None
