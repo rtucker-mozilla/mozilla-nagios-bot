@@ -393,8 +393,8 @@ class NagiosStatusTest(unittest.TestCase):
         target, message = self.tc.status_by_host_name(self.event, cmd, m)
         self.assertEqual(len(message), 2)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message[0], '%s: db1.foo.mozilla.com:PING is \x033OK\x03\x03\x03 - PING OK - Packet loss = 0%%, RTA = 0.80 ms' % self.event.source)
-        self.assertEqual(message[1], '%s: db2.foo.mozilla.com:PING is \x033OK\x03\x03\x03 - PING OK - Packet loss = 0%%, RTA = 0.88 ms' % self.event.source)
+        self.assertTrue('%s: db1.foo.mozilla.com:PING is \x033OK\x03\x03\x03 - PING OK - Packet loss = 0%%, RTA = 0.80 ms' % self.event.source in message[0])
+        self.assertTrue('%s: db2.foo.mozilla.com:PING is \x033OK\x03\x03\x03 - PING OK - Packet loss = 0%%, RTA = 0.88 ms' % self.event.source in message[1])
         
     def test_basic_host_status_wildcard_services(self):
         cmd = "status db2.foo.mozilla.com:*"
@@ -409,7 +409,7 @@ class NagiosStatusTest(unittest.TestCase):
         target, message = self.tc.status_by_host_name(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(len(message), 1)
-        self.assertEqual(message[0], "%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source)
+        self.assertTrue("%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source in message[0] )
 
     def test_host_service_status_by_index(self):
         self.tc.ackable_list = [None]*self.tc.list_size
@@ -419,7 +419,7 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
+        self.assertTrue('%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds' % (self.event.source) in message)
 
     def test_host_service_status_multiple_entriesby_index(self):
         self.tc.ackable_list = [None]*self.tc.list_size
@@ -429,7 +429,7 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
+        self.assertTrue('%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds' % (self.event.source) in message)
         self.tc.process_line(self.service_line, True)
         self.tc.process_line(self.service_line, True)
         self.tc.process_line(self.service_line, True)
@@ -438,7 +438,7 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
+        self.assertTrue('%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds' % (self.event.source) in message)
         cmd = "status 105"
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
@@ -456,19 +456,19 @@ class NagiosStatusTest(unittest.TestCase):
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db1.foo.mozilla.com SWAP OK - 99%% free (2023 MB out of 2047 MB)" % self.event.source)
+        self.assertTrue("%s: db1.foo.mozilla.com SWAP OK - 99%% free (2023 MB out of 2047 MB)" % self.event.source in message)
         cmd = "status 103"
         m = re.search('^status (\d+)$', cmd)
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source)
+        self.assertTrue("%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source in message)
 
     def test_basic_host_status_wildcard_service_from_start(self):
         cmd = "status db2.foo.mozilla.com:Sw*"
         m = re.search('^status ([^:]+):(.+)$', cmd)
         target, message = self.tc.status_by_host_name(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message[0], "%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source)
+        self.assertTrue("%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source in message[0])
         self.assertEqual(len(message), 1)
 class NagiosLogLineTest(unittest.TestCase):
 

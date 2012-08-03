@@ -35,6 +35,7 @@ from MozillaIRCPager import MozillaIRCPager
 from NagiosLogLine import NagiosLogLine
 from settings import logger
 from MozillaNagiosStatus_settings import *
+import datetime
 
 class MozillaNagiosStatus:
     def __init__(self, connection, channels):
@@ -667,7 +668,7 @@ class MozillaNagiosStatus:
         if not ret:
             return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
 
-        return event.target, "%s: %s %s %s" % (event.source, host, ret['plugin_output'], self.readable_from_timestamp(ret['last_checked']) )
+        return event.target, "%s: %s %s %s" % (event.source, host, ret['plugin_output'], self.readable_from_timestamp(ret['last_check']) )
 
     def readable_from_timestamp(self, unix_time):
         return datetime.datetime.fromtimestamp(int(unix_time)).strftime('%Y-%m-%d %H:%M:%S')
@@ -714,7 +715,7 @@ class MozillaNagiosStatus:
                                 state_string = format.color('WARNING', format.YELLOW)
                             if entry['current_state'] == '2':
                                 state_string = format.color('CRITICAL', format.RED)
-                            write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_checked']))
+                            write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                             output_list.append(write_string)
                         elif hostname == '*' and entry['service_description'].upper().strip() == service.upper().strip():
                             if entry['current_state'] == '0':
@@ -723,7 +724,7 @@ class MozillaNagiosStatus:
                                 state_string = format.color('WARNING', format.YELLOW)
                             if entry['current_state'] == '2':
                                 state_string = format.color('CRITICAL', format.RED)
-                            write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_checked']))
+                            write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                             output_list.append(write_string)
                         elif '*' in hostname and entry['service_description'].upper().strip() == service.upper().strip() and hostname.split('*')[0] in entry['host_name']:
                             if entry['current_state'] == '0':
@@ -732,7 +733,7 @@ class MozillaNagiosStatus:
                                 state_string = format.color('WARNING', format.YELLOW)
                             if entry['current_state'] == '2':
                                 state_string = format.color('CRITICAL', format.RED)
-                            write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_checked']))
+                            write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                             output_list.append(write_string)
                         elif '*' in hostname and '*' == service.upper().strip() and hostname.split('*')[0] in entry['host_name']:
                             for entry in service_statuses:
@@ -742,7 +743,7 @@ class MozillaNagiosStatus:
                                     state_string = format.color('WARNING', format.YELLOW)
                                 if entry['current_state'] == '2':
                                     state_string = format.color('CRITICAL', format.RED)
-                                write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_checked']))
+                                write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                                 output_list.append(write_string)
                         elif  '*' in service.upper().strip().split('*')[0] and hostname.split('*')[0] in entry['host_name']:
                             for entry in service_statuses:
@@ -752,7 +753,7 @@ class MozillaNagiosStatus:
                                     state_string = format.color('WARNING', format.YELLOW)
                                 if entry['current_state'] == '2':
                                     state_string = format.color('CRITICAL', format.RED)
-                                write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_checked']))
+                                write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                                 output_list.append(write_string)
                     if len(output_list) < self.service_output_limit:
                         return event.target, output_list
@@ -770,7 +771,7 @@ class MozillaNagiosStatus:
                             state_string = format.color('WARNING', format.YELLOW)
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
-                        write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_checked']))
+                        write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                         output_list.append(write_string)
                     elif '*' in hostname and hostname.split('*')[0] in entry['host_name']:
                         if entry['current_state'] == '0':
@@ -779,7 +780,7 @@ class MozillaNagiosStatus:
                             state_string = format.color('WARNING', format.YELLOW)
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
-                        write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_checked']))
+                        write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                         output_list.append(write_string)
                 if len(output_list) < self.service_output_limit:
                     return event.target, output_list
@@ -797,7 +798,7 @@ class MozillaNagiosStatus:
                             state_string = format.color('WARNING', format.YELLOW)
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
-                        write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'])
+                        write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], entry['last_check'])
                         output_list.append(write_string)
                 if len(output_list) < self.service_output_limit:
                     return event.target, output_list
