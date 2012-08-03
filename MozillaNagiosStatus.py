@@ -668,7 +668,7 @@ class MozillaNagiosStatus:
         if not ret:
             return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
 
-        return event.target, "%s: %s %s %s" % (event.source, host, ret['plugin_output'], self.readable_from_timestamp(ret['last_check']) )
+        return event.target, "%s: %s %s Last Checked: %s" % (event.source, host, ret['plugin_output'], self.readable_from_timestamp(ret['last_check']) )
 
     def readable_from_timestamp(self, unix_time):
         return datetime.datetime.fromtimestamp(int(unix_time)).strftime('%Y-%m-%d %H:%M:%S')
