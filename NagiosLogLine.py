@@ -27,7 +27,7 @@ import re
 class NagiosLogLine:
     def __init__(self, line):
         self.is_service = False
-        self.time_string = datetime.datetime.now().strftime("%a %H:%m:%S")
+        self.time_string = datetime.datetime.now().strftime("%a %H:%M:%S")
         self.line = line.strip()
         self.notification_list = []
         self.notification_recipient = None
