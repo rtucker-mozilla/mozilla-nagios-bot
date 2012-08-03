@@ -24,7 +24,7 @@
 # this file under either the MPL or the GPLv2 License.
 import datetime
 import re
-from time import gmtime, strftime
+from time import gmtime, strftime, localtime
 class NagiosLogLine:
     def __init__(self, line):
         self.is_service = False
@@ -48,7 +48,7 @@ class NagiosLogLine:
             self.message = self._get_message()
 
     def _get_time_string(self):
-        tz = strftime("%Z", gmtime())
+        tz = strftime("%Z", localtime())
         return "%s %s" % (datetime.datetime.now().strftime("%a %H:%M:%S"), tz)
 
     def _get_host(self):

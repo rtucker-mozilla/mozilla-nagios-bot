@@ -672,7 +672,7 @@ class MozillaNagiosStatus:
         return event.target, "%s: %s %s Last Checked: %s" % (event.source, host, ret['plugin_output'], self.readable_from_timestamp(ret['last_check']) )
 
     def readable_from_timestamp(self, unix_time):
-        tz = strftime("%Z", gmtime())
+        tz = strftime("%Z", time.localtime())
         return "%s %s" % (datetime.datetime.fromtimestamp(int(unix_time)).strftime('%Y-%m-%d %H:%M:%S'), tz)
 
     def status_by_host_name(self, event, message, options):
