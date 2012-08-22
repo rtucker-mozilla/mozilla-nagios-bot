@@ -1,6 +1,7 @@
 *.swp
 *.pyc
 MozillaIRCPager_settings.py
+BugzillaIRC_settings.py
 MozillaNagiosStatus_settings.py
 MozillaTestClass.py
 settings_local.py
