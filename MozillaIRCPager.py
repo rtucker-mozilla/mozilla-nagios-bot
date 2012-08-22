@@ -71,7 +71,7 @@ class MozillaIRCPager:
             ret = -1
 
         if ret is 0:
-            return event.target, "%s: %s has been paged" % (event.source, recipient)
+            return event.target, "%s: %s has been paged with the message \"%s\"" % (event.source, recipient, message)
         else:
             return event.target, "%s: %s could not be paged" % (event.source, recipient)
 
