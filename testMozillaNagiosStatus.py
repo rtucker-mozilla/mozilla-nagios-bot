@@ -78,6 +78,21 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
+    def test_downtime_by_host_only(self):
+        self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime test-host.fake.mozilla.com 1m blah blah'
+        m = re.search('^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', message)
+        cmd = self.tc.downtime(self.event, message, m, return_cmd=True)
+        ### fixup timestamp vars in response
+        ### Replace the execution timestamp
+        cmd = re.sub('\[\d+\]', '[000000]', cmd)
+        ### Replace the start and end timestamp
+        cmd = re.sub('\.com;\d+;\d+;', '.com;1234;5678;', cmd)
+        ### Confirm that the syntax is correct per:
+
+        self.assertEqual(cmd, '[000000] SCHEDULE_HOST_DOWNTIME;test-host.fake.mozilla.com;1234;5678;2;0;60;%s;blah blah\n' % (self.my_nick ))
+
     def test_downtime_by_index_host_only(self):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)

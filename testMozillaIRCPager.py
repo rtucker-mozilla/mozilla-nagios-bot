@@ -44,9 +44,10 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual('^page\\s+([A-Za-z][_A-Za-z0-9]+?)\\s+(.+)\\s*$',plugins[0]['regex']) 
 
     def test_correct_page(self):
-        page_message = 'page %s this is a test message' % (self.event.source)
+        message_content = "this is a test message"
+        page_message = 'page %s %s' % (self.event.source, message_content)
         plugins = self.tc.return_plugins()
         m = re.search(plugins[0]['regex'], page_message)
         target, message = self.tc.page(self.event, page_message, m)
         self.assertEqual(self.event.target, target)
-        self.assertEqual(message, '%s: %s has been paged' % (self.event.source, self.event.source) )
+        self.assertEqual(message, '%s: %s has been paged with the message "%s(%s)"' % (self.event.source, self.event.source, message_content, self.event.source) )
