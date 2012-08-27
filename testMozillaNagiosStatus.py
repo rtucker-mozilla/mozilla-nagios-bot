@@ -78,7 +78,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
-    def test_downtime_by_host_only(self):
+    def test_downtime_by_host_only_cmd_return(self):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime test-host.fake.mozilla.com 1m blah blah'
