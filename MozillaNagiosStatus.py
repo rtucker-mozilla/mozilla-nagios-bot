@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -56,6 +57,8 @@ class MozillaNagiosStatus:
         self.disallowed_ack = DISALLOWED_ACK
         self.oncall_file = ONCALL_FILE
         self.status_file = STATUS_FILE
+        self.incoming_sms_log = INCOMING_SMS_LOG
+        self.sms_channel = SMS_CHANNEL
         self.service_output_limit = SERVICE_OUTPUT_LIMIT
         self.default_channel_group = DEFAULT_CHANNEL_GROUP
         self.channel_groups = CHANNEL_GROUPS
@@ -64,6 +67,7 @@ class MozillaNagiosStatus:
 
         ##Start new thread to parse the nagios log file
         thread.start_new_thread(self.tail_file, (self.connection,))
+        thread.start_new_thread(self.watch_incoming_sms, (self.connection,))
         thread.start_new_thread(self.monitor_current_oncall, (self.connection,))
         #self.tail_file(self.connection)
 
@@ -175,7 +179,7 @@ class MozillaNagiosStatus:
         else:
             return event.target, "%s: Unable to find host" % (event.source)
 
-    def downtime(self, event, message, options, return_cmd=False):
+    def downtime(self, event, message, options):
         try:
             host = options.group(1)
             try: 
@@ -198,19 +202,13 @@ class MozillaNagiosStatus:
             if m:
                 duration = self.interval_to_seconds(m.group(1), m.group(2))
                 if service is not None:
-                    write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    if not return_cmd:
-                        return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
-                    else:
-                        return write_string
+                    return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
                 else:
-                    write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;2;0;%d;%s;%s\n" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
+                    write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    if not return_cmd:
-                        return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
-                    else:
-                        return write_string
+                    return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
         else:
             return event.target, "%s: Host Not Found %s" % (event.source, host) 
             
@@ -487,6 +485,46 @@ class MozillaNagiosStatus:
                 channel_current_topic = '%s || on call sysadmin: %s' % (channel_current_topic, new_oncall)
 
             self.set_topic(connection, channel['name'], channel_current_topic)
+
+    def watch_incoming_sms(self, connection):
+        laststat = self.get_current_timestamp()
+        if not os.path.exists(self.incoming_sms_log):
+            open(self.incoming_sms_log, "a")
+        file = open(self.incoming_sms_log,'r')
+        inode = os.stat(self.incoming_sms_log)[1]
+
+        #Find the size of the file and move to the end
+        st_results = os.stat(self.incoming_sms_log)
+        st_size = st_results[6]
+        file.seek(st_size)
+
+        do_once = True
+        while 1:
+            if (int(time.time()) - laststat) > 30:
+                laststat = int(time.time())
+                new_inode = os.stat(self.incoming_sms_log)[1]
+                if inode != new_inode:
+                    inode = new_inode
+                    file.close()
+                    file = open(self.incoming_sms_log)
+                    st_results = os.stat(self.incoming_sms_log)
+                    st_size = st_results[6]
+                    file.seek(st_size)
+
+            where = file.tell()
+            line = self.get_line(file.readline())
+
+            if not line:
+                time.sleep(1)
+                file.seek(where)
+            else:
+                try:
+                    inbound_name, message = line.split("<||>")
+                except IndexError:
+                    inbound_name = ""
+                    message = line
+
+                self.connection.send_message(self.sms_channel, "SMS from %s: %s" % (inbound_name, message) )
 
     def tail_file(self, connection):
         laststat = self.get_current_timestamp()

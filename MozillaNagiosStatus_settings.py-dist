@@ -20,4 +20,6 @@ ONCALL_CHANNELS = [
         {'name': '#channel-name', 'topic':''},
         ]
 DISALLOWED_ACK = []
-
+SMS_LOG = '/var/log/smslogfile'
+self.incoming_sms_log = '/var/log/incoming_sms_log'
+self.sms_channel = '#yourchannelforalerts'
