@@ -25,6 +25,7 @@
 import datetime
 import re
 from time import gmtime, strftime, localtime
+from MozillaNagiosStatus_settings import REDIRECTOR_URL
 class NagiosLogLine:
     def __init__(self, line):
         self.is_service = False
@@ -36,6 +37,8 @@ class NagiosLogLine:
         self.host = None
         self.service = None
         self.message = None
+        self.line_from = None
+        self.comment = None
         self._is_notification()
         
         if self.is_notification:
@@ -46,6 +49,8 @@ class NagiosLogLine:
             self.service = self._get_service()
             self.state = self._get_state()
             self.message = self._get_message()
+            self.comment = self._get_comment()
+            self.line_from = self._get_line_from()
 
     def _get_time_string(self):
         tz = strftime("%Z", localtime())
@@ -69,9 +74,23 @@ class NagiosLogLine:
 
     def _get_message(self):
         if self.is_service:
-            return self.notification_list[5]
+            redirect_url = REDIRECTOR_URL % self.service
+            redirect_url = redirect_url.strip().replace(' ', '+')
+            return "%s (%s)" % (self.notification_list[5], redirect_url)
         else:
             return self.notification_list[4]
+
+    def _get_comment(self):
+        try:
+            return self.notification_list[-1]
+        except:
+            return ''
+
+    def _get_line_from(self):
+        try:
+            return self.notification_list[-2]
+        except:
+            return ''
 
     def _is_notification(self):
         m = re.search("^\[\d+\]\s(HOST|SERVICE) NOTIFICATION:", self.line)

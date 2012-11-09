@@ -76,7 +76,7 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^ack ([^:]+):([^:]+)\s*$', 'callback':self.ack_by_host_with_service})
         self.message_commands.append({'regex':'^ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
         self.message_commands.append({'regex':'^unack (\d+)$', 'callback':self.unack})
-        self.message_commands.append({'regex':'^unack ([^:]+)\s*$', 'callback':self.unack_by_host})
+        self.message_commands.append({'regex':'^unack (.*)$', 'callback':self.unack_by_host})
         self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
         self.message_commands.append({'regex':'^recheck (\d+)$', 'callback':self.recheck_by_index})
         self.message_commands.append({'regex':'^recheck (.*)\s*$', 'callback':self.recheck_by_host})
@@ -335,10 +335,10 @@ class MozillaNagiosStatus:
                 write_string = "%s: I'm sorry but you're not allowed to ACK this alert here. Please visit the appropriate nagios webui to ACK it there." % event.source
                 return event.target, write_string
             elif service is None:
-                write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
+                write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;nagiosadmin;(%s)%s\n" % (timestamp,host,from_user,message)
                 return_string = "%s: The Host %s has been ack'd" % (event.source, host)  
             else:
-                write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;%s;%s\n" % (timestamp,host,service,from_user,message)
+                write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;nagiosadmin;(%s)%s\n" % (timestamp,host,service,from_user,message)
                 return_string = "%s: The Service %s:%s has been ack'd" % (event.source, host, service)
             self.write_to_nagios_cmd(write_string)
             return event.target, return_string
@@ -352,13 +352,24 @@ class MozillaNagiosStatus:
     def unack_by_host(self, event, message, options):
         timestamp = int(time.time())
         from_user =  event.source
-        try:
-            host = options.group(1)
-            write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s\n" % (timestamp, host)
-            self.write_to_nagios_cmd(write_string)
-            return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
-        except Exception, e:
-            return event.target, "%s Could not ack" % (e)
+        if ':' in options.group(1):
+            try:
+                host = options.group(1).split(':')[0]
+                svc = options.group(1).split(':')[1]
+                write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s" % (timestamp, host, svc)
+                self.write_to_nagios_cmd(write_string)
+                return event.target, "%s: ok, acknowledgment (if any) for %s:%s has been removed." % (event.source, host, svc)
+            except Exception, e:
+                return event.target, "%s Could not ack" % (e)
+
+        else:
+            try:
+                host = options.group(1)
+                write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s" % (timestamp, host)
+                self.write_to_nagios_cmd(write_string)
+                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
+            except Exception, e:
+                return event.target, "%s Could not ack" % (e)
 
     def unack(self, event, message, options):
         timestamp = int(time.time())
@@ -375,11 +386,11 @@ class MozillaNagiosStatus:
             except:
                 service is None
             if service is None:
-                write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s\n" % (timestamp, host)
-                return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
+                write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s" % (timestamp, host)
+                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
             else:
-                write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s\n" % (timestamp, host, service)
-                return event.target, "%s: The Service %s:%s has been ack'd" % (event.source, host, service) 
+                write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s" % (timestamp, host, service)
+                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
             self.write_to_nagios_cmd(write_string)
             return event.target, "%s" % (write_string) 
         except TypeError:
@@ -589,7 +600,7 @@ class MozillaNagiosStatus:
                     write_string = "%s %s:%s is %s: %s" % (l.time_string, l.host, l.service, state_string, l.message)
             else:
                 #message = "%s;%s" % (m.group(3).split(";")[4], m.group(3).split(";")[5])
-                write_string = "%s %s:%s is %s: %s" % (l.time_string, l.host, l.service, state_string, l.message)
+                write_string = "%s %s:%s is %s: %s (%s) %s" % (l.time_string, l.host, l.service, state_string, l.message, l.line_from, l.comment)
         else:
             if re.search("ACKNOWLEDGEMENT", l.state):
                 is_ack = True
@@ -755,50 +766,90 @@ class MozillaNagiosStatus:
                     output_list = []
                     for entry in service_statuses:
                         if entry['host_name'] == hostname:
-                            if entry['current_state'] == '0':
-                                state_string = format.color('OK', format.GREEN)
-                            if entry['current_state'] == '1':
-                                state_string = format.color('WARNING', format.YELLOW)
-                            if entry['current_state'] == '2':
-                                state_string = format.color('CRITICAL', format.RED)
+                            if entry['problem_has_been_acknowledged'] == '1':
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                            else :
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('OK', format.GREEN)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('WARNING', format.YELLOW)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                             output_list.append(write_string)
                         elif hostname == '*' and entry['service_description'].upper().strip() == service.upper().strip():
-                            if entry['current_state'] == '0':
-                                state_string = format.color('OK', format.GREEN)
-                            if entry['current_state'] == '1':
-                                state_string = format.color('WARNING', format.YELLOW)
-                            if entry['current_state'] == '2':
-                                state_string = format.color('CRITICAL', format.RED)
+                            if entry['problem_has_been_acknowledged'] == '1':
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                            else :
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('OK', format.GREEN)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('WARNING', format.YELLOW)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                             output_list.append(write_string)
                         elif '*' in hostname and entry['service_description'].upper().strip() == service.upper().strip() and hostname.split('*')[0] in entry['host_name']:
-                            if entry['current_state'] == '0':
-                                state_string = format.color('OK', format.GREEN)
-                            if entry['current_state'] == '1':
-                                state_string = format.color('WARNING', format.YELLOW)
-                            if entry['current_state'] == '2':
-                                state_string = format.color('CRITICAL', format.RED)
+                            if entry['problem_has_been_acknowledged'] == '1':
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                            else :
+                                if entry['current_state'] == '0':
+                                    state_string = format.color('OK', format.GREEN)
+                                if entry['current_state'] == '1':
+                                    state_string = format.color('WARNING', format.YELLOW)
+                                if entry['current_state'] == '2':
+                                    state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                             output_list.append(write_string)
                         elif '*' in hostname and '*' == service.upper().strip() and hostname.split('*')[0] in entry['host_name']:
                             for entry in service_statuses:
-                                if entry['current_state'] == '0':
-                                    state_string = format.color('OK', format.GREEN)
-                                if entry['current_state'] == '1':
-                                    state_string = format.color('WARNING', format.YELLOW)
-                                if entry['current_state'] == '2':
-                                    state_string = format.color('CRITICAL', format.RED)
+                                if entry['problem_has_been_acknowledged'] == '1':
+                                    if entry['current_state'] == '0':
+                                        state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                                    if entry['current_state'] == '1':
+                                        state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                                    if entry['current_state'] == '2':
+                                        state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                                else :
+                                    if entry['current_state'] == '0':
+                                        state_string = format.color('OK', format.GREEN)
+                                    if entry['current_state'] == '1':
+                                        state_string = format.color('WARNING', format.YELLOW)
+                                    if entry['current_state'] == '2':
+                                        state_string = format.color('CRITICAL', format.RED)
                                 write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                                 output_list.append(write_string)
                         elif  '*' in service.upper().strip().split('*')[0] and hostname.split('*')[0] in entry['host_name']:
                             for entry in service_statuses:
-                                if entry['current_state'] == '0':
-                                    state_string = format.color('OK', format.GREEN)
-                                if entry['current_state'] == '1':
-                                    state_string = format.color('WARNING', format.YELLOW)
-                                if entry['current_state'] == '2':
-                                    state_string = format.color('CRITICAL', format.RED)
+                                if entry['problem_has_been_acknowledged'] == '1':
+                                    if entry['current_state'] == '0':
+                                        state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                                    if entry['current_state'] == '1':
+                                        state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                                    if entry['current_state'] == '2':
+                                        state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                                else :
+                                    if entry['current_state'] == '0':
+                                        state_string = format.color('OK', format.GREEN)
+                                    if entry['current_state'] == '1':
+                                        state_string = format.color('WARNING', format.YELLOW)
+                                    if entry['current_state'] == '2':
+                                        state_string = format.color('CRITICAL', format.RED)
                                 write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                                 output_list.append(write_string)
                     if len(output_list) < self.service_output_limit:
