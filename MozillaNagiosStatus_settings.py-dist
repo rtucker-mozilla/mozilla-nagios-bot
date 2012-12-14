@@ -1,5 +1,5 @@
 ACKABLE_LIST = []
-LIST_OFFSET 100
+LIST_OFFSET = 100
 NAGIOS_CMD = "<path_to_nagios_cmd_file>"
 NAGIOS_LOG = "<path_to_nagios_log_file>"
 ONCALL_FILE = "<path_to_oncall_file"
@@ -15,7 +15,7 @@ CHANNEL_GROUPS = {
     'nagioscontact':'#channel_for_alert',
     }
 DEFAULT_CHANNEL_GROUP = '#default'
-UPDATE_ONCALL = false
+UPDATE_ONCALL = False
 ONCALL_CHANNELS = [
         {'name': '#channel-name', 'topic':''},
         ]
