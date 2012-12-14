@@ -21,5 +21,6 @@ ONCALL_CHANNELS = [
         ]
 DISALLOWED_ACK = []
 SMS_LOG = '/var/log/smslogfile'
-self.incoming_sms_log = '/var/log/incoming_sms_log'
-self.sms_channel = '#yourchannelforalerts'
+incoming_sms_log = '/var/log/incoming_sms_log'
+INCOMING_SMS_LOG = '/var/log/incoming_sms_log'
+SMS_CHANNEL = '#yourchannelforalerts'
