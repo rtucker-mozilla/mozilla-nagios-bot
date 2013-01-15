@@ -36,7 +36,7 @@ class MozillaIRCPager:
         self.build_regex_list()
 
     def build_regex_list(self):
-        self.message_commands.append({'regex':'^page\s+([A-Za-z][_A-Za-z0-9]+?)\s+(.+)\s*$', 'callback':self.page,})
+        self.message_commands.append({'regex':'^page\s+([A-Za-z][_A-Za-z0-9]*?)\s+(.+)\s*$', 'callback':self.page,})
 
     ###Default entry point for each plugin. Simply returns a regex and which static method to call upon matching the regex
     def return_plugins(self):
