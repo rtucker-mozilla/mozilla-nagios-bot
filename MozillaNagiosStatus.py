@@ -202,6 +202,13 @@ class MozillaNagiosStatus:
                 service = None
         except Exception, e:
             return event.target, "%s: Unable to downtime host %s" % (event.source, host) 
+
+        if host and '*' in host:
+            return event.target, "%s: Unable to downtime hosts by wildcard" % (event.source)
+
+        if service and '*' in service:
+            return event.target, "%s: Unable to downtime services by wildcard" % (event.source)
+
         if self.validate_host(host) is True:
             current_time = time.time() 
             m = re.search("(\d+)([dhms])", duration)
