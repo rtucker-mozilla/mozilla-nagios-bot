@@ -168,7 +168,6 @@ class MozillaNagiosStatus:
         if service and '*' in service:
             return event.target, "%s: Unable to downtime services by wildcard" % (event.source)
 
-
         if host is not None and self.validate_host(host) is True:
             current_time = time.time() 
             m = re.search("(\d+)([dhms])", duration)
@@ -898,12 +897,20 @@ class MozillaNagiosStatus:
                 output_list = []
                 for entry in service_statuses:
                     if entry['host_name'].upper().startswith(host.upper()) and entry['service_description'] == 'PING':
-                        if entry['current_state'] == '0':
-                            state_string = format.color('OK', format.GREEN)
-                        if entry['current_state'] == '1':
-                            state_string = format.color('WARNING', format.YELLOW)
-                        if entry['current_state'] == '2':
-                            state_string = format.color('CRITICAL', format.RED)
+                        if entry['problem_has_been_acknowledged'] == '1':
+                            if entry['current_state'] == '0':
+                                state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                            if entry['current_state'] == '1':
+                                state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                            if entry['current_state'] == '2':
+                                state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                        else :
+                            if entry['current_state'] == '0':
+                                state_string = format.color('OK', format.GREEN)
+                            if entry['current_state'] == '1':
+                                state_string = format.color('WARNING', format.YELLOW)
+                            if entry['current_state'] == '2':
+                                state_string = format.color('CRITICAL', format.RED)
                         write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], entry['last_check'])
                         output_list.append(write_string)
                 if len(output_list) < self.service_output_limit:
@@ -915,12 +922,20 @@ class MozillaNagiosStatus:
                 host_found = False
                 for entry in host_statuses:
                     if entry['host_name'] == hostname:
-                        if entry['current_state'] == '0':
-                            state_string = format.color('OK', format.GREEN)
-                        if entry['current_state'] == '1':
-                            state_string = format.color('DOWN', format.RED)
-                        if entry['current_state'] == '2':
-                            state_string = format.color('DOWN', format.RED)
+                        if entry['problem_has_been_acknowledged'] == '1':
+                            if entry['current_state'] == '0':
+                                state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                            if entry['current_state'] == '1':
+                                state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                            if entry['current_state'] == '2':
+                                state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                        else :
+                            if entry['current_state'] == '0':
+                                state_string = format.color('OK', format.GREEN)
+                            if entry['current_state'] == '1':
+                                state_string = format.color('WARNING', format.YELLOW)
+                            if entry['current_state'] == '2':
+                                state_string = format.color('CRITICAL', format.RED)
                         host_found = True
                         write_string = "%s: %s is %s - %s" % (event.source, hostname, state_string, entry['plugin_output'])
                 if host_found is False:
