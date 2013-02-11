@@ -883,6 +883,8 @@ class MozillaNagiosStatus:
                             state_string = format.color('WARNING', format.YELLOW)
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
+                        if entry['current_state'] == '3':
+                            state_string = format.color('UNKNOWN', format.YELLOW)
                         write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                         output_list.append(write_string)
                     elif '*' in hostname and hostname.split('*')[0] in entry['host_name']:
@@ -892,6 +894,8 @@ class MozillaNagiosStatus:
                             state_string = format.color('WARNING', format.YELLOW)
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
+                        if entry['current_state'] == '3':
+                            state_string = format.color('UNKNOWN', format.YELLOW)
                         write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                         output_list.append(write_string)
                 if len(output_list) < self.service_output_limit:
