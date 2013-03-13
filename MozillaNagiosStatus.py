@@ -324,17 +324,33 @@ class MozillaNagiosStatus:
             return False, "Could not find host %s" % (host) 
 
     def nagios_status(self, event, message, options):
-        logger.info("Just testing this %s" % event.target)
-        conf = self.parseConf(self.status_file)
         service_statuses = []
         host_statuses = []
-
-        if conf is not False:
+        has_statuses = True
+        if self.use_mklive_status:
+            has_statuses = True
+            hosts = self.mkgetallhosts()
+            for host in hosts:
+                host_statuses.append({
+                                'current_state': host[1],
+                                })
+            service_statuses = []
+            services = self.mkgetallservices()
+            for service in services:
+                service_statuses.append({
+                                'current_state': service[1],
+                                'check_type': service[6],
+                                })
+        else:
+            conf = self.parseConf(self.status_file)
+            has_statuses = True
             for entry in conf:
-                    if entry[0] == 'hoststatus':
-                        host_statuses.append(entry[1])
-                    if entry[0] == 'servicestatus':
-                        service_statuses.append(entry[1])
+                if entry[0] == 'hoststatus':
+                    host_statuses.append(entry[1])
+                if entry[0] == 'servicestatus':
+                    service_statuses.append(entry[1])
+
+        if has_statuses:
             total_service_count = len(service_statuses)
             total_host_count = len(host_statuses)
             hosts_up_count = 0
@@ -757,7 +773,6 @@ class MozillaNagiosStatus:
 
         return event.target, "%s: rechecking all services on %s" % (event.source, host) 
     def status_by_index(self, event, message, options):
-        conf = self.parseConf(self.status_file)
         ret = None
         host_statuses =  []
         service_statuses =  []
@@ -769,26 +784,52 @@ class MozillaNagiosStatus:
                 service = service.upper()
             except:
                 service is None
-            for entry in conf:
-                if service is None:
-                    if entry[0] == 'hoststatus':
-                        ret = entry[1]
-                        break
-                elif service is not None and '*' not in service:
-                    if entry[0] == 'servicestatus' and entry[1]['service_description'].upper() == service:
-                        ret = entry[1]
-                        break
+            if self.use_mklive_status:
+                host_and_service_search = self.mksearch(host, service)
+                if len(host_and_service_search) > 0:
+                    plugin_output = host_and_service_search[0][2]
+                    last_check = host_and_service_search[0][3]
+                    ret = True
+            else:
+                conf = self.parseConf(self.status_file)
+                for entry in conf:
+                    if service is None:
+                        if entry[0] == 'hoststatus':
+                            plugin_output = entry[1]['plugin_output']
+                            last_check = entry[1]['last_check']
+                            ret = True
+                            break
+                    elif service is not None and '*' not in service:
+                        if entry[0] == 'servicestatus' and entry[1]['service_description'].upper() == service:
+                            plugin_output = entry[1]['plugin_output']
+                            last_check = entry[1]['last_check']
+                            ret = True
+                            break
         except Exception, e:
-            return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
+            return event.target, "%s Sorry, but I can't find any matching services %s" % (event.source, e) 
 
         if not ret:
             return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
 
-        return event.target, "%s: %s %s Last Checked: %s" % (event.source, host, ret['plugin_output'], self.readable_from_timestamp(ret['last_check']) )
+        return event.target, "%s: %s %s Last Checked: %s" % (event.source, host, plugin_output, self.readable_from_timestamp(last_check) )
 
     def readable_from_timestamp(self, unix_time):
         tz = strftime("%Z", time.localtime())
         return "%s %s" % (datetime.datetime.fromtimestamp(int(unix_time)).strftime('%Y-%m-%d %H:%M:%S'), tz)
+
+    def mkgetallhosts(self):
+        query = []
+        query.append("GET hosts")
+        query.append("Columns: host_name state plugin_output last_check host_acknowledged")
+        query_string = "%s\n\n" % ('\n'.join(query))
+        return self.execute_query(query_string)
+
+    def mkgetallservices(self):
+        query = []
+        query.append("GET services")
+        query.append("Columns: host_name state plugin_output last_check service_acknowledged description check_type")
+        query_string = "%s\n\n" % ('\n'.join(query))
+        return self.execute_query(query_string)
 
     def mksearch(self, host_search=None, service_search=None):
         query = []
