@@ -38,6 +38,7 @@ from settings import logger
 from MozillaNagiosStatus_settings import *
 import datetime
 from time import gmtime, strftime
+import socket
 
 class MozillaNagiosStatus:
     def __init__(self, connection, channels):
@@ -64,6 +65,9 @@ class MozillaNagiosStatus:
         self.channel_groups = CHANNEL_GROUPS
         self.update_oncall = UPDATE_ONCALL
         self.oncall_channels = ONCALL_CHANNELS
+        self.use_mklive_status = USE_MKLIVE_STATUS
+        self.mklive_status_socket = MKLIVE_STATUS_SOCKET
+
 
         ##Start new thread to parse the nagios log file
         thread.start_new_thread(self.tail_file, (self.connection,))
@@ -82,6 +86,8 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^recheck (.*)\s*$', 'callback':self.recheck_by_host})
         self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
+        self.message_commands.append({'regex':'^statusmk ([^:]+)\s*$', 'callback':self.status_by_host_namemk})
+        self.message_commands.append({'regex':'^statusmk ([^:]+):(.+)$', 'callback':self.status_by_host_namemk})
         self.message_commands.append({'regex':'^status$', 'callback':self.nagios_status})
         self.message_commands.append({'regex':'^validate([^:]+)\s*$', 'callback':self.validate_host})
         self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
@@ -118,6 +124,30 @@ class MozillaNagiosStatus:
                 ]
     def return_plugins(self):
         return self.message_commands
+
+    def execute_query(self, query_string):
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(self.mklive_status_socket)
+        s.send(query_string)
+        answer = s.recv(100000000)
+        s.shutdown(socket.SHUT_WR)
+        return self.parse_table(answer)
+
+    def parse_table(self, answer):
+        table = [ line.split(';') for line in answer.split('\n')[:-1] ]
+        return table
+
+    def build_wildcard_query(self, query):
+        query_string = ''
+
+        if query.startswith('*') and query.endswith('*'):
+            query_string = '%s' % (query.replace('*', ''))
+        if not query.startswith('*'):
+            query_string = '^%s' % (query.replace('*', ''))
+        if not query.endswith('*'):
+            query_string = '%s$' % (query.replace('*', ''))
+
+        return query_string
     
     def ackable(self, host, service, state, message):
         """
@@ -209,6 +239,12 @@ class MozillaNagiosStatus:
         if service and '*' in service:
             return event.target, "%s: Unable to downtime services by wildcard" % (event.source)
 
+        if self.use_mklive_status:
+            host_and_service_search = self.mksearch(host, service)
+
+            if len(host_and_service_search) == 0:
+                return event.target, "%s: I'm sorry but I cannot find the host or service" % (event.source)
+
         if self.validate_host(host) is True:
             current_time = time.time() 
             m = re.search("(\d+)([dhms])", duration)
@@ -265,18 +301,27 @@ class MozillaNagiosStatus:
         ##Following is for the test case to pass. We shouldn't ever have a host with this name
         if host == 'test-host.fake.mozilla.com':
             return True
-        conf = self.parseConf(self.status_file)
+
         if host is None:
             host = options.group(1)
-        host = host.strip()
-        if conf is not False:
-            for entry in conf:
-                if entry[0] == 'hoststatus' and entry[1]['host_name'] == host:
-                    return True
-                else:
-                    continue
 
-        return False, "Could not find host %s" % (host) 
+        if self.use_mklive_status:
+            host_and_service_search = self.mksearch(host, None)
+            if len(host_and_service_search) > 0:
+                return True
+            else:
+                return False, "Could not find host %s" % (host) 
+        else:
+            conf = self.parseConf(self.status_file)
+            host = host.strip()
+            if conf is not False:
+                for entry in conf:
+                    if entry[0] == 'hoststatus' and entry[1]['host_name'] == host:
+                        return True
+                    else:
+                        continue
+
+            return False, "Could not find host %s" % (host) 
 
     def nagios_status(self, event, message, options):
         logger.info("Just testing this %s" % event.target)
@@ -744,6 +789,81 @@ class MozillaNagiosStatus:
     def readable_from_timestamp(self, unix_time):
         tz = strftime("%Z", time.localtime())
         return "%s %s" % (datetime.datetime.fromtimestamp(int(unix_time)).strftime('%Y-%m-%d %H:%M:%S'), tz)
+
+    def mksearch(self, host_search=None, service_search=None):
+        query = []
+        if not service_search and host_search and len(host_search) > 0:
+            query.append("GET hosts")
+            query.append("Columns: host_name state plugin_output last_check host_acknowledged")
+            host_query = self.build_wildcard_query(host_search)
+            query.append("Filter: host_name ~ %s" % host_query)
+        else:
+            query.append("GET services")
+            query.append("Columns: host_name state plugin_output last_check service_acknowledged description")
+            service_query = self.build_wildcard_query(service_search)
+            query.append("Filter: description ~ %s" % service_query)
+            if host_search and len(host_search) > 0:
+                host_query = self.build_wildcard_query(host_search)
+                query.append("Filter: host_name ~ %s" % host_query)
+        query_string = "%s\n\n" % ('\n'.join(query))
+        return self.execute_query(query_string)
+
+    def status_by_host_namemk(self, event, message, options):
+        if not self.use_mklive_status:
+            return event.target, "Sorry, but the mklivestatus plugin is not enabled"
+
+        output_list = []
+        hostname = options.group(1)
+        try:
+            service = options.group(2).upper()
+        except:
+            service = None
+
+        results = self.mksearch(hostname, service)
+        for entry in results:
+            host_name = entry[0]
+            current_state = entry[1]
+            plugin_output = entry[2]
+            last_check = entry[3]
+            is_acked = entry[4]
+            if service:
+                description = entry[5]
+            else:
+                description = ''
+            if is_acked == '1':
+                if current_state == '0':
+                    state_string = format.color('ACKNOWLEDGEMENT (OK)', format.BLUE)
+                if current_state == '1':
+                    state_string = format.color('ACKNOWLEDGEMENT (WARNING)', format.BLUE)
+                if current_state == '2':
+                    state_string = format.color('ACKNOWLEDGEMENT (CRITICAL)', format.BLUE)
+                if current_state == '3':
+                    state_string = format.color('ACKNOWLEDGEMENT (UNKNOWN)', format.BLUE)
+            else:
+                if current_state == '0':
+                    state_string = format.color('OK', format.GREEN)
+                if current_state == '1':
+                    state_string = format.color('WARNING', format.YELLOW)
+                if current_state == '2':
+                    state_string = format.color('CRITICAL', format.RED)
+                if current_state == '3':
+                    state_string = format.color('UNKNOWN', format.YELLOW)
+            if service:
+                write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source,
+                                host_name, description, state_string, plugin_output,
+                                self.readable_from_timestamp(last_check))
+            else:
+                write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source,
+                                host_name, description, state_string, plugin_output,
+                                self.readable_from_timestamp(last_check))
+            output_list.append(write_string)
+
+        if len(output_list) < self.service_output_limit:
+            return event.target, output_list
+        else:
+            write_string = "%s: more than %i services returned. Please be more specific." % (event.source, self.service_output_limit)
+            return event.target, write_string
+
 
     def status_by_host_name(self, event, message, options):
         conf = self.parseConf(self.status_file)

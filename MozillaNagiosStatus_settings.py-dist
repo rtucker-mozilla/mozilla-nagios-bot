@@ -6,6 +6,8 @@ ONCALL_FILE = "<path_to_oncall_file"
 SERVICE_OUTPUT_LIMIT = 15
 STATUS_FILE = "status.dat"
 LIST_SIZE = 100
+USE_MKLIVE_STATUS = True
+MKLIVE_STATUS_SOCKET='<path_to_socket>'
 CHANNELS = [
         {'name':'#channel-name',},
     ]
