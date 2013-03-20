@@ -67,6 +67,8 @@ class MozillaNagiosStatus:
         self.oncall_channels = ONCALL_CHANNELS
         self.use_mklive_status = USE_MKLIVE_STATUS
         self.mklive_status_socket = MKLIVE_STATUS_SOCKET
+        self.use_irc_hilight = USE_IRC_HILIGHT
+        self.irc_hilight_nick = IRC_HILIGHT_NICK
 
 
         ##Start new thread to parse the nagios log file
@@ -696,8 +698,12 @@ class MozillaNagiosStatus:
         channel = self.get_channel_group(l.notification_recipient)
         if is_test is False:
             if self.is_muted(channel) is False:
+                if self.use_irc_hilight and l.notification_recipient == self.irc_hilight_nick:
+                    write_string = "(%s) %s" % (format.color("IRC", format.ORANGE), write_string)
                 self.connection.send_message(channel, write_string)
         elif channel:
+            if self.use_irc_hilight and l.notification_recipient == self.irc_hilight_nick:
+                write_string = "(%s) %s" % (format.color("IRC", format.ORANGE), write_string)
             return channel, write_string
         else:
             return None

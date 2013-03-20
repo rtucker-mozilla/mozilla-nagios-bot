@@ -25,3 +25,5 @@ DISALLOWED_ACK = []
 SMS_LOG = '/var/log/smslogfile'
 INCOMING_SMS_LOG = '/var/log/incoming_sms_log'
 SMS_CHANNEL = '#yourchannelforalerts'
+USE_IRC_HIGHLIGHT = False                                                                                              
+IRC_HIGHLIGHT_NICK = ''
