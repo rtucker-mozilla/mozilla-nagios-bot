@@ -699,11 +699,11 @@ class MozillaNagiosStatus:
         if is_test is False:
             if self.is_muted(channel) is False:
                 if self.use_irc_hilight and l.notification_recipient == self.irc_hilight_nick:
-                    write_string = "(%s) %s" % (format.color("IRC", format.ORANGE), write_string)
+                    write_string = "(%s) %s" % (format.color("IRC", format.PURPLE), write_string)
                 self.connection.send_message(channel, write_string)
         elif channel:
             if self.use_irc_hilight and l.notification_recipient == self.irc_hilight_nick:
-                write_string = "(%s) %s" % (format.color("IRC", format.ORANGE), write_string)
+                write_string = "(%s) %s" % (format.color("IRC", format.PURPLE), write_string)
             return channel, write_string
         else:
             return None
