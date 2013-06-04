@@ -81,6 +81,7 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', 'callback':self.ack})
         self.message_commands.append({'regex':'^ack ([^:]+):([^:]+)\s*$', 'callback':self.ack_by_host_with_service})
         self.message_commands.append({'regex':'^ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
+        self.message_commands.append({'regex':'^ack \S+$', 'callback':self.ack_missing_message})
         self.message_commands.append({'regex':'^unack (\d+)$', 'callback':self.unack})
         self.message_commands.append({'regex':'^unack (.*)$', 'callback':self.unack_by_host})
         self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
@@ -476,6 +477,9 @@ class MozillaNagiosStatus:
         except Exception, e:
             return event.target, "%s: %s Could not ack" % (event.source, e)
 
+    def ack_missing_message(self, event, message, options):
+            return event.target, "%s: Could not ack. Missing message argument." % (event.source)
+
     def ack_by_host_with_service(self, event, message, options):
         timestamp = int(time.time())
         from_user =  event.source
@@ -666,6 +670,8 @@ class MozillaNagiosStatus:
                 state_string = format.color(l.state, format.YELLOW)
             elif l.state == "CRITICAL":
                 state_string = format.color(l.state, format.RED)
+            elif re.search("DOWNTIME", l.state):
+                state_string = format.color(l.state, format.YELLOW)
             else:
                 state_string = format.color(l.state, format.RED)
             if is_ack is False:
@@ -688,6 +694,10 @@ class MozillaNagiosStatus:
             elif re.search(l.state, "DOWN"):
                 state_string = format.color(l.state, format.RED)
             elif re.search(l.state, "UNREACHABLE"):
+                state_string = format.color(l.state, format.RED)
+            elif re.search("DOWNTIME", l.state):
+                state_string = format.color(l.state, format.YELLOW)
+            else:
                 state_string = format.color(l.state, format.RED)
             if is_ack is False:
                 self.ackable(l.host, None, l.state, l.message)
@@ -862,11 +872,16 @@ class MozillaNagiosStatus:
         output_list = []
         hostname = options.group(1)
         try:
-            service = options.group(2).upper()
+            service = options.group(2)
         except:
             service = None
 
         results = self.mksearch(hostname, service)
+
+        if len(results) == 0:
+            write_string = "%s: I'm sorry, I couldn't find any hosts/services for you." % (event.source)
+            return event.target, write_string
+
         for entry in results:
             host_name = entry[0]
             current_state = entry[1]
