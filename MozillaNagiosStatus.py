@@ -608,8 +608,7 @@ class MozillaNagiosStatus:
                 if self.update_oncall:
                     self.set_new_oncall(connection, new_oncall)
                 current_oncall = new_oncall
-            else:
-                time.sleep(30)
+            time.sleep(30)
     def get_channel_topic(self, channels, channel_name):
         try: 
             return [channel['topic'] for channel in channels if channel['name'] == channel_name][0]
