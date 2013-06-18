@@ -852,7 +852,6 @@ class MozillaNagiosStatus:
             host = dict_object['host']
             try:
                 service = dict_object['service']
-                service = service.upper()
             except:
                 service is None
             if self.use_mklive_status:
