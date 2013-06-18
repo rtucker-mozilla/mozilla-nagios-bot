@@ -106,6 +106,7 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+list$', 'callback':self.get_available_oncall})
         self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+all$', 'callback':self.get_all_oncall_type})
         self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
+        self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncallmk})
         #self.message_commands.append({'regex':'^whoisoncall$', 'callback':self.get_oncall})
 
     ###Default entry point for each plugin. Simply returns a regex and which static method to call upon matching the regex
@@ -1265,6 +1266,15 @@ class MozillaNagiosStatus:
 
     def get_oncallmk(self, event, message, options):
         oncall_type = options.group(2)
+
+        """
+            The old functionality returned the sysadmin
+            who was oncall by default. This will replicate
+            this.
+        """
+        if oncall_type == '':
+            oncall_type = 'sysadmin'
+
         if oncall_type != 'all':
             return event.target, "%s: %s" % (event.source, self.get_oncall_from_statusmk(oncall_type)) 
         else:
