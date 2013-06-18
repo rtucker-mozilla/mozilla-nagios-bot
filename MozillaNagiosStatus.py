@@ -87,18 +87,25 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
         self.message_commands.append({'regex':'^recheck (\d+)$', 'callback':self.recheck_by_index})
         self.message_commands.append({'regex':'^recheck (.*)\s*$', 'callback':self.recheck_by_host})
-        self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
-        self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
-        self.message_commands.append({'regex':'^statusmk ([^:]+)\s*$', 'callback':self.status_by_host_namemk})
-        self.message_commands.append({'regex':'^statusmk ([^:]+):(.+)$', 'callback':self.status_by_host_namemk})
+        #self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
+        #self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
+        self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_namemk})
+        self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_namemk})
         self.message_commands.append({'regex':'^status$', 'callback':self.nagios_status})
         self.message_commands.append({'regex':'^validate([^:]+)\s*$', 'callback':self.validate_host})
         self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime})
-        self.message_commands.append({'regex':'^page\s+(\d+)\s+(\w+)\s*$', 'callback':self.page_with_alert_number})
+        self.message_commands.append({'regex':'^undowntime ([^:]+)\s*$', 'callback':self.cancel_downtime})
+        self.message_commands.append({'regex':'^undowntime ([^:]+):(.+)$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^mute$', 'callback':self.mute})
         self.message_commands.append({'regex':'^unmute$', 'callback':self.unmute})
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncall})
+
+        # At some point, remove this line and the associated function
+        #self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncall})
+
+        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+list$', 'callback':self.get_available_oncall})
+        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+all$', 'callback':self.get_all_oncall_type})
+        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
         #self.message_commands.append({'regex':'^whoisoncall$', 'callback':self.get_oncall})
 
     ###Default entry point for each plugin. Simply returns a regex and which static method to call upon matching the regex
@@ -119,12 +126,17 @@ class MozillaNagiosStatus:
             'status <host>',
             'status <host:service>',
             'status <alert_index>',
+            'statusmk <host>',
+            'statusmk <host:service>',
+            'statusmk <alert_index>',
             'downtime <alert_id> <interval><d|h|m|s> <message> <interval> is the how long <d|h|m|s> is days|hours|minutes|seconds',
             'downtime <host:service> <interval><d|h|m|s> <message> <interval> is the how long <d|h|m|s> is days|hours|minutes|seconds',
+            'undowntime <host:service>',
             'mute',
             'unmute',
-            'oncall|whoisoncall',
-                ]
+            #'oncall|whoisoncall',
+            'oncall <who> <who> can be <all|list|or an entry from the output of oncallmk list>',
+            ]
     def return_plugins(self):
         return self.message_commands
 
@@ -217,6 +229,47 @@ class MozillaNagiosStatus:
                     return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
         else:
             return event.target, "%s: Unable to find host" % (event.source)
+
+    def cancel_downtime(self, event, message, options):
+        message = ""
+        host = options.group(1)
+        query = []
+        query.append("GET downtimes")
+        query.append("Filter: host_alias = %s" % host)
+        query.append("Columns: id")
+        try:
+            service = options.group(2)
+            query.append("Filter: service_display_name = %s" % service)
+        except IndexError:
+            query.append("Filter: service_display_name =")
+            service = None
+        
+        query_string = "%s\n\n" % ('\n'.join(query))
+        try:
+            downtime_id = self.execute_query(query_string)[0][0]
+            print downtime_id
+            if service:
+                command_string = 'DEL_SVC_DOWNTIME'
+            else:
+                command_string = 'DEL_HOST_DOWNTIME'
+            write_string = "[%lu] %s;%s" % (int(time.time()), command_string, downtime_id)
+            self.write_to_nagios_cmd(write_string)
+            if not service:
+                message = "Downtime cancelled for %s" % (host)
+            else:
+                message = "Downtime cancelled for %s:%s" % (host, service)
+            if not downtime_id or downtime_id == '':
+                if not service:
+                    message = "Unable to cancel downtime for %s" % (host)
+                else:
+                    message = "Unable to cancel downtime for %s:%s" % (host, service)
+        except IndexError:
+            if not service:
+                message = "Unable to cancel downtime for %s" % (host)
+            else:
+                message = "Unable to cancel downtime for %s:%s" % (host, service)
+
+        return event.target, message
 
     def downtime(self, event, message, options):
         try:
@@ -544,9 +597,11 @@ class MozillaNagiosStatus:
         connection.send_message(channel, "New Sysadmin OnCall is %s" % (oncall))
 
     def monitor_current_oncall(self, connection):
-        current_oncall = self.get_oncall_from_file()
+        #current_oncall = self.get_oncall_from_file()
+        current_oncall = self.get_oncall_name_from_statusmk('sysadmin')
         while 1:
-            new_oncall = self.get_oncall_from_file()
+            #new_oncall = self.get_oncall_from_file()
+            new_oncall = self.get_oncall_name_from_statusmk('sysadmin')
             if new_oncall != current_oncall:
                 for channel in self.oncall_channels:
                     self.send_oncall_update(connection, channel['name'], new_oncall)
@@ -1136,6 +1191,7 @@ class MozillaNagiosStatus:
                 return event.target, write_string
         else:
             return event.target, "%s: Sorry, but I'm unable to open the status file" % event.source
+
     def get_oncall_from_file(self):
         oncall = 'not-yet-set'
         try:
@@ -1147,6 +1203,73 @@ class MozillaNagiosStatus:
         except Exception, e:
             oncall = 'not-yet-set'
         return oncall
+
+    def get_available_oncall(self, event, message, options):
+        query = []
+        query.append("GET contacts")
+        query.append("Columns: alias")
+        query.append("Filter: alias ~~ OnCall \(.*\)")
+        query_string = "%s\n\n" % ('\n'.join(query))
+    
+        oncalls = []
+        message = ""
+        try:
+            oncall_list = self.execute_query(query_string)
+            message = "Available Oncall Types:"
+            oncall_string = ""
+            for i in oncall_list:
+                m = re.search('(.*) Oncall', i[0])
+                if m:
+                    oncall_string += " %s" % (m.group(1))
+            message += oncall_string
+        except IndexError:
+            message = "I've failed to detect available oncalls"
+
+        return event.target, "%s" % message
+        
+    def get_all_oncall_type(self, event, message, options):
+        event_source = event.source
+        query = []
+        query.append("GET contacts")
+        query.append("Columns: alias")
+        query.append("Filter: alias ~~ OnCall \(")
+        query_string = "%s\n\n" % ('\n'.join(query))
+        try:
+            oncall_list = self.execute_query(query_string)
+            return_list = []
+            for i in oncall_list:
+                m = re.search('(.*) Oncall \((.*)\)', i[0])
+                if m:
+                    return_list.append("%s: %s currently has the %s pager" % (event_source, m.group(2), m.group(1)))
+            return event.target, return_list
+        except IndexError:
+            return event_source, "I've failed to detect available oncalls"
+    def get_oncall_name_from_statusmk(self, oncall_type):
+        query = []
+        query.append("GET contacts")
+        query.append("Columns: alias")
+        query.append("Filter: alias ~~ %s OnCall" % oncall_type)
+        query_string = "%s\n\n" % ('\n'.join(query))
+        try:
+            m = re.search('\((.*)\)', self.execute_query(query_string)[0][0])
+            if m:
+                return "%s" % m.group(1)
+            else:
+                return "UNKNOWN"
+        except IndexError:
+            return "ERROR :%s" % oncall_type
+
+    def get_oncall_from_statusmk(self, oncall_type):
+        oncall_from_statusmk = self.get_oncall_name_from_statusmk(oncall_type)
+        return "%s currently has the pager" % oncall_from_statusmk
+
+
+    def get_oncallmk(self, event, message, options):
+        oncall_type = options.group(2)
+        if oncall_type != 'all':
+            return event.target, "%s: %s" % (event.source, self.get_oncall_from_statusmk(oncall_type)) 
+        else:
+            return self.get_all_oncall_type(event.source)
 
     def get_oncall(self, event, message, options):
         return event.target, "%s: %s currently has the pager" % (event.source, self.get_oncall_from_file()) 
