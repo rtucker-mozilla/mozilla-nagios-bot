@@ -139,12 +139,22 @@ class MozillaNagiosStatus:
         return self.message_commands
 
     def execute_query(self, query_string):
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.connect(self.mklive_status_socket)
-        s.send(query_string)
-        answer = s.recv(100000000)
-        s.shutdown(socket.SHUT_WR)
-        return self.parse_table(answer)
+        retry = 0
+        max_retry = 5
+        while retry < max_retry:
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(10)
+                s.connect(self.mklive_status_socket)
+                s.send(query_string)
+                answer = s.recv(100000000)
+                s.shutdown(socket.SHUT_WR)
+                return self.parse_table(answer)
+            except socket.error:
+                time.sleep(3)
+                retry += 1
+                continue
+        return []
 
     def parse_table(self, answer):
         table = [ line.split(';') for line in answer.split('\n')[:-1] ]
@@ -595,6 +605,11 @@ class MozillaNagiosStatus:
         connection.send_message(channel, "New Sysadmin OnCall is %s" % (oncall))
 
     def monitor_current_oncall(self, connection):
+        """
+            Going to pad some sleep in here so the connection
+            object exists when we get going.
+        """
+        time.sleep(5)
         #current_oncall = self.get_oncall_from_file()
         current_oncall = self.get_oncall_name_from_statusmk('sysadmin')
         while 1:
