@@ -738,6 +738,7 @@ class MozillaNagiosStatus:
             elif l.state == "CRITICAL":
                 state_string = format.color(l.state, format.RED)
             elif re.search("DOWNTIME", l.state):
+                is_ack = True
                 state_string = format.color(l.state, format.YELLOW)
             else:
                 state_string = format.color(l.state, format.RED)
@@ -763,6 +764,7 @@ class MozillaNagiosStatus:
             elif re.search(l.state, "UNREACHABLE"):
                 state_string = format.color(l.state, format.RED)
             elif re.search("DOWNTIME", l.state):
+                is_ack = True
                 state_string = format.color(l.state, format.YELLOW)
             else:
                 state_string = format.color(l.state, format.RED)
