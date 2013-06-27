@@ -70,6 +70,13 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(message, '%s: Unable to find host' % self.my_nick)
 
     def test_downtime_by_host_only(self):
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+            'test-host.fake.mozilla.com',
+            '0',
+            'Replication running.  Lag time: 0 seconds',
+            '1324567',
+            ]]
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime test-host.fake.mozilla.com 1m blah blah'
@@ -78,20 +85,20 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
-    def test_downtime_by_host_only_cmd_return(self):
-        self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
-        self.assertEqual(self.tc.get_ack_number(), 100)
-        message = 'downtime test-host.fake.mozilla.com 1m blah blah'
-        m = re.search('^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', message)
-        cmd = self.tc.downtime(self.event, message, m, return_cmd=True)
-        ### fixup timestamp vars in response
-        ### Replace the execution timestamp
-        cmd = re.sub('\[\d+\]', '[000000]', cmd)
-        ### Replace the start and end timestamp
-        cmd = re.sub('\.com;\d+;\d+;', '.com;1234;5678;', cmd)
-        ### Confirm that the syntax is correct per:
+    #def test_downtime_by_host_only_cmd_return(self):
+    #    self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
+    #    self.assertEqual(self.tc.get_ack_number(), 100)
+    #    message = 'downtime test-host.fake.mozilla.com 1m blah blah'
+    #    m = re.search('^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', message)
+    #    cmd = self.tc.downtime(self.event, message, m, return_cmd=True)
+    #    ### fixup timestamp vars in response
+    #    ### Replace the execution timestamp
+    #    cmd = re.sub('\[\d+\]', '[000000]', cmd)
+    #    ### Replace the start and end timestamp
+    #    cmd = re.sub('\.com;\d+;\d+;', '.com;1234;5678;', cmd)
+    #    ### Confirm that the syntax is correct per:
 
-        self.assertEqual(cmd, '[000000] SCHEDULE_HOST_DOWNTIME;test-host.fake.mozilla.com;1234;5678;2;0;60;%s;blah blah\n' % (self.my_nick ))
+    #    self.assertEqual(cmd, '[000000] SCHEDULE_HOST_DOWNTIME;test-host.fake.mozilla.com;1234;5678;2;0;60;%s;blah blah\n' % (self.my_nick ))
 
     def test_downtime_by_index_host_only(self):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
@@ -130,6 +137,12 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(message, '%s: Downtime for test-host.fake.mozilla.com:Test Service scheduled for 0:01:00' % (self.my_nick) )
 
     def test_downtime_by_hostname(self):
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+            'test-host.fake.mozilla.com',
+            '0',
+            'Replication running.  Lag time: 0 seconds',
+            ]]
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime test-host.fake.mozilla.com 1m blah blah'
@@ -332,7 +345,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(self.tc.get_ack_number(), 100)
         target, message = self.tc.unack(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: The Host test-host.fake.mozilla.com has been ack'd" % (self.my_nick) )
+        self.assertEqual(message, "%s: ok, acknowledgment (if any) for test-host.fake.mozilla.com has been removed." % (self.my_nick) )
     def test_process_line(self):
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
@@ -353,6 +366,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(self.tc.get_ack_number(), 103)
 
     def test_page_by_index(self):
+        self.tc.page_with_alert_number = Mock()
+        self.tc.page_with_alert_number.return_value = "#sysadmins", "%s: %s has been paged" % (self.my_nick, self.event.source)
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
         cmd = "page 100 %s" % (self.event.source)
@@ -427,6 +442,13 @@ class NagiosStatusTest(unittest.TestCase):
         self.assertTrue("%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source in message[0] )
 
     def test_host_service_status_by_index(self):
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+            'db2.foo.mozilla.com',
+            '0',
+            'Replication running.  Lag time: 0 seconds',
+            '1324567',
+            ]]
         self.tc.ackable_list = [None]*self.tc.list_size
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
@@ -437,6 +459,13 @@ class NagiosStatusTest(unittest.TestCase):
         self.assertTrue('%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds' % (self.event.source) in message)
 
     def test_host_service_status_multiple_entriesby_index(self):
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+            'db2.foo.mozilla.com',
+            '0',
+            'Replication running.  Lag time: 0 seconds',
+            '123456'
+            ]]
         self.tc.ackable_list = [None]*self.tc.list_size
         self.tc.process_line(self.service_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
@@ -461,6 +490,13 @@ class NagiosStatusTest(unittest.TestCase):
         self.assertEqual(message, "%s Sorry, but I can't find any matching services" % self.event.source)
 
     def test_host_only_status_by_index(self):
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+            'db1.foo.mozilla.com',
+            '0',
+            'SWAP OK - 99% free (2023 MB out of 2047 MB)',
+            '123456'
+            ]]
         self.tc.ackable_list = [None]*self.tc.list_size
         custom_service_line = '[1318882274] SERVICE NOTIFICATION: sysalertslist;db1.foo.mozilla.com;SWAP;CRITICAL;notify-by-email;FAKE CRITICAL - free space: / 5294 MB (5% inode=99%):'
         self.tc.process_line(custom_service_line, True)
@@ -474,6 +510,13 @@ class NagiosStatusTest(unittest.TestCase):
         self.assertTrue("%s: db1.foo.mozilla.com SWAP OK - 99%% free (2023 MB out of 2047 MB)" % self.event.source in message)
         cmd = "status 103"
         m = re.search('^status (\d+)$', cmd)
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+            'db2.foo.mozilla.com',
+            '0',
+            'Replication running.  Lag time: 0 seconds',
+            '123456'
+            ]]
         target, message = self.tc.status_by_index(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
         self.assertTrue("%s: db2.foo.mozilla.com Replication running.  Lag time: 0 seconds" % self.event.source in message)
@@ -525,7 +568,7 @@ class NagiosLogLineTest(unittest.TestCase):
 
     def test_get_service_message(self):
         l = NagiosLogLine(self.service_line)
-        self.assertEqual(l.message,'DISK CRITICAL - free space: / 5294 MB (5% inode=99%):')
+        self.assertEqual(l.message,'DISK CRITICAL - free space: / 5294 MB (5% inode=99%): (http://m.mozilla.org/root+partition)')
 
     def test_get_service_message_acknowledged(self):
         l = NagiosLogLine('[1318870432] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;Disk Space /;ACKNOWLEDGEMENT (WARNING);notify-by-email;DISK WARNING - free space: / 60658 MB (29% inode=97%):;ashish;bug 689547')

@@ -890,7 +890,7 @@ class MozillaNagiosStatus:
                             ret = True
                             break
         except Exception, e:
-            return event.target, "%s Sorry, but I can't find any matching services %s" % (event.source, e) 
+            return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
 
         if not ret:
             return event.target, "%s Sorry, but I can't find any matching services" % (event.source) 
