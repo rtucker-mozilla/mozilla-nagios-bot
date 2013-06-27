@@ -1279,14 +1279,17 @@ class MozillaNagiosStatus:
 
 
     def get_oncallmk(self, event, message, options):
-        oncall_type = options.group(2)
+        try:
+            oncall_type = options.group(2)
+        except:
+            oncall_type = None
 
         """
             The old functionality returned the sysadmin
             who was oncall by default. This will replicate
             this.
         """
-        if oncall_type == '':
+        if oncall_type == '' or not oncall_type:
             oncall_type = 'sysadmin'
 
         if oncall_type != 'all':
