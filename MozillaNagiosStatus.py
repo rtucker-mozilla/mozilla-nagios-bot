@@ -78,7 +78,8 @@ class MozillaNagiosStatus:
         #self.tail_file(self.connection)
 
     def build_regex_list(self):
-        self.message_commands.append({'regex':'^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', 'callback':self.ack})
+        #self.message_commands.append({'regex':'^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', 'callback':self.ack})
+        self.message_commands.append({'regex':'^ack (\d+)\s+(.*)$', 'callback':self.ack})
         self.message_commands.append({'regex':'^ack ([^:]+):([^:]+)\s*$', 'callback':self.ack_by_host_with_service})
         self.message_commands.append({'regex':'^ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
         self.message_commands.append({'regex':'^ack \S+$', 'callback':self.ack_missing_message})

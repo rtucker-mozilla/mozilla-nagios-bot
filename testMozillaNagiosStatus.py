@@ -222,6 +222,25 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: The Host fake-host.mozilla.org has been ack'd" % (self.my_nick) )
         
+    def test_ack_host_by_index_with_colon_in_message(self):
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+            'fake-host.mozilla.org',
+            '0',
+            'Replication running.  Lag time: 0 seconds',
+            '1324567',
+            ]]
+        self.tc.process_line(self.host_line, True)
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = "ack 100 test message :)"
+        m = re.search('^ack (\d+)\s+(.*)$', message)
+        target, message = self.tc.ack(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Host fake-host.mozilla.org has been ack'd" % (self.my_nick) )
+        self.tc.process_line(self.ack_host_line, True)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: The Host fake-host.mozilla.org has been ack'd" % (self.my_nick) )
+
     def test_ack_host_by_index_after_one_cycle(self):
         self.tc.ackable_list = [None]*self.tc.list_size
         self.assertEqual(len(self.tc.ackable_list), 100)
@@ -397,7 +416,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
     def test_get_page_plugin(self):
         plugins = self.tc.return_plugins()
-        self.assertEqual('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', plugins[0]['regex']) 
+        self.assertEqual('^ack (\d+)\s+(.*)$', plugins[0]['regex']) 
         
         
 class NagiosStatusTest(unittest.TestCase):
