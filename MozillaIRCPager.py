@@ -25,13 +25,16 @@
 
 import subprocess
 from MozillaIRCPager_settings import *
-from MozillaNagiosStatus_settings import ONCALL_FILE
+from MozillaNagiosStatus_settings import ONCALL_FILE, MKLIVE_STATUS_SOCKET, USE_MKLIVE_STATUS
+import socket
 from settings import logger
 import re
 class MozillaIRCPager:
     def __init__(self, connection, channels=[]):
         self.PAGE_SCRIPT = PAGE_SCRIPT
         self.oncall_file = ONCALL_FILE
+        self.mklive_status_socket = MKLIVE_STATUS_SOCKET
+        self.use_mklive_status = USE_MKLIVE_STATUS
         self.message_commands = []
         self.build_regex_list()
 
@@ -60,7 +63,11 @@ class MozillaIRCPager:
             recipient = options.group(1)
             message = "%s(%s)" % (options.group(2), event.source)
         if recipient == "oncall":
-            recipient = self.get_oncall_from_file()
+            if self.use_mklive_status:
+                recipient = self.get_oncall_name_from_statusmk('sysadmin')
+            else:
+                recipient = self.get_oncall_from_file()
+
         ##Check that we have a valid message and recipient and set should_page to true
         if message is not None and recipient is not None:
             should_page = True
@@ -74,6 +81,39 @@ class MozillaIRCPager:
             return event.target, "%s: %s has been paged with the message \"%s\"" % (event.source, recipient, message)
         else:
             return event.target, "%s: %s could not be paged" % (event.source, recipient)
+
+    def execute_query(self, query_string):
+        retry = 0
+        max_retry = 5
+        while retry < max_retry:
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(10)
+                s.connect(self.mklive_status_socket)
+                s.send(query_string)
+                answer = s.recv(100000000)
+                s.shutdown(socket.SHUT_WR)
+                return self.parse_table(answer)
+            except socket.error:
+                time.sleep(3)
+                retry += 1
+                continue
+        return []
+
+    def get_oncall_name_from_statusmk(self, oncall_type):
+        query = []
+        query.append("GET contacts")
+        query.append("Columns: alias")
+        query.append("Filter: alias ~~ %s OnCall" % oncall_type)
+        query_string = "%s\n\n" % ('\n'.join(query))
+        try:
+            m = re.search('\((.*)\)', self.execute_query(query_string)[0][0])
+            if m:
+                return "%s" % m.group(1)
+            else:
+                return "UNKNOWN"
+        except IndexError:
+            return "ERROR :%s" % oncall_type
 
     def get_oncall_from_file(self):
         oncall = 'not-yet-set'
