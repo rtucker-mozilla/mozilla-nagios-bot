@@ -82,6 +82,10 @@ class MozillaIRCPager:
         else:
             return event.target, "%s: %s could not be paged" % (event.source, recipient)
 
+    def parse_table(self, answer):
+        table = [ line.split(';') for line in answer.split('\n')[:-1] ]
+        return table
+
     def execute_query(self, query_string):
         retry = 0
         max_retry = 5
