@@ -84,17 +84,17 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^ack ([^:]+):"([^"]+)"\s*$', 'callback':self.ack_by_host_with_service})
         self.message_commands.append({'regex':'^ack ([^:]+):([^:]+)\s*$', 'callback':self.ack_by_host_with_service})
         self.message_commands.append({'regex':'^ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
-        self.message_commands.append({'regex':'^ack \S+$', 'callback':self.ack_missing_message})
+        self.message_commands.append({'regex':'^ack \S+\s*$', 'callback':self.ack_missing_message})
 
-        self.message_commands.append({'regex':'^unack (\d+)$', 'callback':self.unack})
+        self.message_commands.append({'regex':'^unack (\d+)\s*$', 'callback':self.unack})
         self.message_commands.append({'regex':'^unack ([^:]+):"([^"]+)"\s*$', 'callback':self.unack_by_host})
         self.message_commands.append({'regex':'^unack ([^:]+):(.+)$', 'callback':self.unack_by_host})
         self.message_commands.append({'regex':'^unack ([^:]+)\s*$', 'callback':self.unack_by_host})
 
-        self.message_commands.append({'regex':'^recheck (\d+)$', 'callback':self.recheck_by_index})
+        self.message_commands.append({'regex':'^recheck (\d+)\s*$', 'callback':self.recheck_by_index})
         self.message_commands.append({'regex':'^recheck (.*)\s*$', 'callback':self.recheck_by_host})
 
-        self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
+        self.message_commands.append({'regex':'^status (\d+)\s*$', 'callback':self.status_by_index})
         #self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
         #self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
         self.message_commands.append({'regex':'^status ([^:]+):"([^"]+)"\s*$', 'callback':self.status_by_host_namemk})
@@ -112,9 +112,9 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^undowntime ([^:]+):"([^"]+)"\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^:]+):(.+)$', 'callback':self.cancel_downtime})
 
-        self.message_commands.append({'regex':'^mute$', 'callback':self.mute})
+        self.message_commands.append({'regex':'^mute\s*$', 'callback':self.mute})
 
-        self.message_commands.append({'regex':'^unmute$', 'callback':self.unmute})
+        self.message_commands.append({'regex':'^unmute\s*$', 'callback':self.unmute})
 
         # At some point, remove this line and the associated function
         #self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncall})
