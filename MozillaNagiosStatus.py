@@ -121,8 +121,8 @@ class MozillaNagiosStatus:
         # At some point, remove this line and the associated function
         #self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncall})
 
-        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+list$', 'callback':self.get_available_oncall})
-        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+all$', 'callback':self.get_all_oncall_type})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(list)\s*$', 'callback':self.get_available_oncall})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(all)\s*$', 'callback':self.get_all_oncall_type})
         self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
         self.message_commands.append({'regex':'^(?:oncall|whoisoncall)$', 'callback':self.get_oncallmk})
         #self.message_commands.append({'regex':'^whoisoncall$', 'callback':self.get_oncall})
