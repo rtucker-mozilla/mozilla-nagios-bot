@@ -80,34 +80,51 @@ class MozillaNagiosStatus:
     def build_regex_list(self):
         #self.message_commands.append({'regex':'^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', 'callback':self.ack})
         self.message_commands.append({'regex':'^ack (\d+)\s+(.*)$', 'callback':self.ack})
+        self.message_commands.append({'regex':'^ack ([^:]+):"([^"]+)"\s+(.*)\s*$', 'callback':self.ack_by_host_with_service})
+        self.message_commands.append({'regex':'^ack ([^:]+):"([^"]+)"\s*$', 'callback':self.ack_by_host_with_service})
         self.message_commands.append({'regex':'^ack ([^:]+):([^:]+)\s*$', 'callback':self.ack_by_host_with_service})
         self.message_commands.append({'regex':'^ack ([^:]+)\s(.*)$', 'callback':self.ack_by_host})
-        self.message_commands.append({'regex':'^ack \S+$', 'callback':self.ack_missing_message})
-        self.message_commands.append({'regex':'^unack (\d+)$', 'callback':self.unack})
-        self.message_commands.append({'regex':'^unack (.*)$', 'callback':self.unack_by_host})
-        self.message_commands.append({'regex':'^status (\d+)$', 'callback':self.status_by_index})
-        self.message_commands.append({'regex':'^recheck (\d+)$', 'callback':self.recheck_by_index})
-        self.message_commands.append({'regex':'^recheck (.*)\s*$', 'callback':self.recheck_by_host})
+        self.message_commands.append({'regex':'^ack \S+\s*$', 'callback':self.ack_missing_message})
+
+        self.message_commands.append({'regex':'^unack (\d+)\s*$', 'callback':self.unack})
+        self.message_commands.append({'regex':'^unack ([^:]+):"([^"]+)"\s*$', 'callback':self.unack_by_host})
+        self.message_commands.append({'regex':'^unack ([^:]+):(.+)$', 'callback':self.unack_by_host})
+        self.message_commands.append({'regex':'^unack ([^:]+)\s*$', 'callback':self.unack_by_host})
+
+        self.message_commands.append({'regex':'^recheck (\d+)\s*$', 'callback':self.recheck_by_index})
+        self.message_commands.append({'regex':'^recheck ([^:]+):.*$', 'callback':self.recheck_by_host})
+        self.message_commands.append({'regex':'^recheck ([^:]+)\s*$', 'callback':self.recheck_by_host})
+
+        self.message_commands.append({'regex':'^status (\d+)\s*$', 'callback':self.status_by_index})
         #self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_name})
         #self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_name})
-        self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_namemk})
+        self.message_commands.append({'regex':'^status ([^:]+):"([^"]+)"\s*$', 'callback':self.status_by_host_namemk})
         self.message_commands.append({'regex':'^status ([^:]+):(.+)$', 'callback':self.status_by_host_namemk})
+        self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_namemk})
         self.message_commands.append({'regex':'^status$', 'callback':self.nagios_status})
-        self.message_commands.append({'regex':'^validate([^:]+)\s*$', 'callback':self.validate_host})
-        self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
-        self.message_commands.append({'regex':'^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime})
+
+        self.message_commands.append({'regex':'^validate ([^:]+)\s*$', 'callback':self.validate_command})
+
+        self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
+        self.message_commands.append({'regex':'^downtime\s+([^: ]+):"([^"]+)"\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
+
         self.message_commands.append({'regex':'^undowntime ([^:]+)\s*$', 'callback':self.cancel_downtime})
+        self.message_commands.append({'regex':'^undowntime ([^:]+):"([^"]+)"\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^:]+):(.+)$', 'callback':self.cancel_downtime})
-        self.message_commands.append({'regex':'^mute$', 'callback':self.mute})
-        self.message_commands.append({'regex':'^unmute$', 'callback':self.unmute})
+
+        self.message_commands.append({'regex':'^mute\s*$', 'callback':self.mute})
+
+        self.message_commands.append({'regex':'^unmute\s*$', 'callback':self.unmute})
 
         # At some point, remove this line and the associated function
         #self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncall})
 
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+list$', 'callback':self.get_available_oncall})
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+all$', 'callback':self.get_all_oncall_type})
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncallmk})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(list)\s*$', 'callback':self.get_available_oncall})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(all)\s*$', 'callback':self.get_all_oncall_type})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)$', 'callback':self.get_oncallmk})
         #self.message_commands.append({'regex':'^whoisoncall$', 'callback':self.get_oncall})
 
     ###Default entry point for each plugin. Simply returns a regex and which static method to call upon matching the regex
@@ -118,23 +135,26 @@ class MozillaNagiosStatus:
 
     def return_help(self):
         return [
-            'ack <id_of alert> <reason for ack>',
-            'ack <host:server> <reason for ack>',
+            'ack <alert_id> <reason for ack>',
             'ack <host> <reason for ack>',
-            'unack <id_of alert>',
+            'ack <host:service> <reason for ack>',
+            'unack <alert_id>',
             'unack <host>',
+            'unack <host>:<service>',
             'recheck <id_of alert>',
             'recheck <host>',
+            'recheck <host>:<service>  # rechecks all services on <host>, not just <service>.',
             'status <host>',
             'status <host:service>',
-            'status <alert_index>',
-            'downtime <alert_id> <interval><d|h|m|s> <message> <interval> is the how long <d|h|m|s> is days|hours|minutes|seconds',
-            'downtime <host:service> <interval><d|h|m|s> <message> <interval> is the how long <d|h|m|s> is days|hours|minutes|seconds',
+            'status <alert_id>',
+            'downtime <alert_id> <interval><y|d|h|m|s> <message> <interval> is the how long <y|d|h|m|s> is years|days|hours|minutes|seconds',
+            'downtime <host:service> <interval><y|d|h|m|s> <message> <interval> is the how long <y|d|h|m|s> is years|days|hours|minutes|seconds',
+            'undowntime <host>',
             'undowntime <host:service>',
             'mute',
             'unmute',
             #'oncall|whoisoncall',
-            'oncall <who> <who> can be <all|list|or an entry from the output of oncallmk list>',
+            'oncall <who>  # <who> can be <all|list|or an entry from the output of oncallmk list>',
             ]
     def return_plugins(self):
         return self.message_commands
@@ -224,18 +244,18 @@ class MozillaNagiosStatus:
 
         if host is not None and self.validate_host(host) is True:
             current_time = time.time() 
-            m = re.search("(\d+)([dhms])", duration)
+            m = re.search("(\d+)([ydhms])", duration)
             if m:
                 duration = self.interval_to_seconds(m.group(1), m.group(2))
 
                 if service is not None:
                     write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
+                    return event.target, "%s: Downtime for service %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration))
                 else:
                     write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
+                    return event.target, "%s: Downtime for host %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
         else:
             return event.target, "%s: Unable to find host" % (event.source)
 
@@ -264,19 +284,19 @@ class MozillaNagiosStatus:
             write_string = "[%lu] %s;%s" % (int(time.time()), command_string, downtime_id)
             self.write_to_nagios_cmd(write_string)
             if not service:
-                message = "Downtime cancelled for %s" % (host)
+                message = "cancelled downtime for host %s" % (host)
             else:
-                message = "Downtime cancelled for %s:%s" % (host, service)
+                message = "cancelled downtime for service %s:%s" % (host, service)
             if not downtime_id or downtime_id == '':
                 if not service:
-                    message = "Unable to cancel downtime for %s" % (host)
+                    message = "Unable to cancel downtime for host %s" % (host)
                 else:
-                    message = "Unable to cancel downtime for %s:%s" % (host, service)
+                    message = "Unable to cancel downtime for service %s:%s" % (host, service)
         except IndexError:
             if not service:
-                message = "Unable to cancel downtime for %s" % (host)
+                message = "Unable to cancel downtime for host %s" % (host)
             else:
-                message = "Unable to cancel downtime for %s:%s" % (host, service)
+                message = "Unable to cancel downtime for service %s:%s" % (host, service)
 
         return event.target, message
 
@@ -312,17 +332,17 @@ class MozillaNagiosStatus:
 
         if self.validate_host(host) is True:
             current_time = time.time() 
-            m = re.search("(\d+)([dhms])", duration)
+            m = re.search("(\d+)([ydhms])", duration)
             if m:
                 duration = self.interval_to_seconds(m.group(1), m.group(2))
                 if service is not None:
                     write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
+                    return event.target, "%s: Downtime for service %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
                 else:
                     write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
+                    return event.target, "%s: Downtime for host %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
         else:
             return event.target, "%s: Host Not Found %s" % (event.source, host) 
             
@@ -336,6 +356,8 @@ class MozillaNagiosStatus:
             duration = int(amount) * 3600
         elif type == "d":
             duration = int(amount) * 86400
+        elif type == "y":
+            duration = int(amount) * 86400 * 365
         else:
             duration = amount
 
@@ -360,6 +382,10 @@ class MozillaNagiosStatus:
             return True
         else:
             return False
+
+    def validate_command(self, event, message, options):
+        host = options.group(1)
+        return self.validate_host(host)
 
     def validate_host(self, host):
 
@@ -475,10 +501,10 @@ class MozillaNagiosStatus:
                 return event.target, write_string
             elif service is None:
                 write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;nagiosadmin;(%s)%s\n" % (timestamp,host,from_user,message)
-                return_string = "%s: The Host %s has been ack'd" % (event.source, host)  
+                return_string = "%s: acknowledged host %s" % (event.source, host)
             else:
                 write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;nagiosadmin;(%s)%s\n" % (timestamp,host,service,from_user,message)
-                return_string = "%s: The Service %s:%s has been ack'd" % (event.source, host, service)
+                return_string = "%s: acknowledged service %s:%s" % (event.source, host, service)
             self.write_to_nagios_cmd(write_string)
             return event.target, return_string
         except TypeError:
@@ -491,22 +517,25 @@ class MozillaNagiosStatus:
     def unack_by_host(self, event, message, options):
         timestamp = int(time.time())
         from_user =  event.source
-        if ':' in options.group(1):
+        host = options.group(1)
+        try:
+            svc = options.group(2)
+        except:
+            svc = None
+
+        if svc:
             try:
-                host = options.group(1).split(':')[0]
-                svc = options.group(1).split(':')[1]
                 write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s" % (timestamp, host, svc)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: ok, acknowledgment (if any) for %s:%s has been removed." % (event.source, host, svc)
+                return event.target, "%s: removed acknowledgment (if any) for service %s:%s" % (event.source, host, svc)
             except Exception, e:
                 return event.target, "%s Could not ack" % (e)
 
         else:
             try:
-                host = options.group(1)
                 write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s" % (timestamp, host)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
+                return event.target, "%s: removed acknowledgment (if any) for host %s" % (event.source, host)
             except Exception, e:
                 return event.target, "%s Could not ack" % (e)
 
@@ -526,10 +555,10 @@ class MozillaNagiosStatus:
                 service is None
             if service is None:
                 write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s" % (timestamp, host)
-                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
+                return event.target, "%s: removed acknowledgment (if any) for host %s" % (event.source, host)
             else:
                 write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s" % (timestamp, host, service)
-                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
+                return event.target, "%s: removed acknowledgment (if any) for service %s:%s" % (event.source, host, service)
             self.write_to_nagios_cmd(write_string)
             return event.target, "%s" % (write_string) 
         except TypeError:
@@ -558,11 +587,11 @@ class MozillaNagiosStatus:
             if service is None:
                 write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
+                return event.target, "%s: acknowledged host %s" % (event.source, host) 
             else:
                 write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;%s;%s\n" % (timestamp, host, service, from_user, message)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: The Service %s:%s has been ack'd" % (event.source, host, service) 
+                return event.target, "%s: acknowledged service %s:%s" % (event.source, host, service) 
         except TypeError:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
         except IndexError:
@@ -582,7 +611,7 @@ class MozillaNagiosStatus:
 
             write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
             self.write_to_nagios_cmd(write_string)
-            return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
+            return event.target, "%s: acknowledged host %s" % (event.source, host) 
         except TypeError:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
         except IndexError:
@@ -853,11 +882,11 @@ class MozillaNagiosStatus:
             self.write_to_nagios_cmd(write_string)
             write_string = "[%lu] SCHEDULE_FORCED_HOST_CHECK;%s;%lu\n" % (int(time.time()), host, int(time.time()))
             self.write_to_nagios_cmd(write_string)
-            return event.target, "%s: rechecking all services on %s" % (event.source, host) 
+            return event.target, "%s: rechecking all services on host %s" % (event.source, host)
         except Exception, e:
             return event.target, "%s Sorry, but I'm unable to recheck" % (event.source) 
 
-        return event.target, "%s: rechecking all services on %s" % (event.source, host) 
+        return event.target, "%s: rechecking all services on host %s" % (event.source, host)
     def status_by_index(self, event, message, options):
         ret = None
         host_statuses =  []
@@ -1280,7 +1309,7 @@ class MozillaNagiosStatus:
 
     def get_oncallmk(self, event, message, options):
         try:
-            oncall_type = options.group(2)
+            oncall_type = options.group(1)
         except:
             oncall_type = None
 
