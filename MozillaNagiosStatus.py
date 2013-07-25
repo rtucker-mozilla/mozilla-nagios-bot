@@ -107,7 +107,7 @@ class MozillaNagiosStatus:
 
         self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+):"([^"]+)"\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
-        self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
 
         self.message_commands.append({'regex':'^undowntime ([^:]+)\s*$', 'callback':self.cancel_downtime})
