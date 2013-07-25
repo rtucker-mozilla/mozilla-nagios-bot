@@ -103,7 +103,7 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^status ([^:]+)\s*$', 'callback':self.status_by_host_namemk})
         self.message_commands.append({'regex':'^status$', 'callback':self.nagios_status})
 
-        self.message_commands.append({'regex':'^validate([^:]+)\s*$', 'callback':self.validate_host})
+        self.message_commands.append({'regex':'^validate ([^:]+)\s*$', 'callback':self.validate_command})
 
         self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+)(?::"([^"]+)")?\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime})
@@ -379,6 +379,10 @@ class MozillaNagiosStatus:
             return True
         else:
             return False
+
+    def validate_command(self, event, message, options):
+        host = options.group(1)
+        return self.validate_host(host)
 
     def validate_host(self, host):
 
