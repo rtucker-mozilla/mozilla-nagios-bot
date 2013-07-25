@@ -121,10 +121,10 @@ class MozillaNagiosStatus:
         # At some point, remove this line and the associated function
         #self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncall})
 
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+list$', 'callback':self.get_available_oncall})
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+all$', 'callback':self.get_all_oncall_type})
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
-        self.message_commands.append({'regex':'^(oncall|whoisoncall)$', 'callback':self.get_oncallmk})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+list$', 'callback':self.get_available_oncall})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+all$', 'callback':self.get_all_oncall_type})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
+        self.message_commands.append({'regex':'^(?:oncall|whoisoncall)$', 'callback':self.get_oncallmk})
         #self.message_commands.append({'regex':'^whoisoncall$', 'callback':self.get_oncall})
 
     ###Default entry point for each plugin. Simply returns a regex and which static method to call upon matching the regex
@@ -1307,7 +1307,7 @@ class MozillaNagiosStatus:
 
     def get_oncallmk(self, event, message, options):
         try:
-            oncall_type = options.group(2)
+            oncall_type = options.group(1)
         except:
             oncall_type = None
 
