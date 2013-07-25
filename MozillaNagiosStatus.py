@@ -251,11 +251,11 @@ class MozillaNagiosStatus:
                 if service is not None:
                     write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
+                    return event.target, "%s: Downtime for service %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration))
                 else:
                     write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
+                    return event.target, "%s: Downtime for host %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
         else:
             return event.target, "%s: Unable to find host" % (event.source)
 
@@ -284,19 +284,19 @@ class MozillaNagiosStatus:
             write_string = "[%lu] %s;%s" % (int(time.time()), command_string, downtime_id)
             self.write_to_nagios_cmd(write_string)
             if not service:
-                message = "Downtime cancelled for %s" % (host)
+                message = "cancelled downtime for host %s" % (host)
             else:
-                message = "Downtime cancelled for %s:%s" % (host, service)
+                message = "cancelled downtime for service %s:%s" % (host, service)
             if not downtime_id or downtime_id == '':
                 if not service:
-                    message = "Unable to cancel downtime for %s" % (host)
+                    message = "Unable to cancel downtime for host %s" % (host)
                 else:
-                    message = "Unable to cancel downtime for %s:%s" % (host, service)
+                    message = "Unable to cancel downtime for service %s:%s" % (host, service)
         except IndexError:
             if not service:
-                message = "Unable to cancel downtime for %s" % (host)
+                message = "Unable to cancel downtime for host %s" % (host)
             else:
-                message = "Unable to cancel downtime for %s:%s" % (host, service)
+                message = "Unable to cancel downtime for service %s:%s" % (host, service)
 
         return event.target, message
 
@@ -338,11 +338,11 @@ class MozillaNagiosStatus:
                 if service is not None:
                     write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
+                    return event.target, "%s: Downtime for service %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration)) 
                 else:
                     write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
+                    return event.target, "%s: Downtime for host %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
         else:
             return event.target, "%s: Host Not Found %s" % (event.source, host) 
             
@@ -499,10 +499,10 @@ class MozillaNagiosStatus:
                 return event.target, write_string
             elif service is None:
                 write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;nagiosadmin;(%s)%s\n" % (timestamp,host,from_user,message)
-                return_string = "%s: The Host %s has been ack'd" % (event.source, host)  
+                return_string = "%s: acknowledged host %s" % (event.source, host)
             else:
                 write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;nagiosadmin;(%s)%s\n" % (timestamp,host,service,from_user,message)
-                return_string = "%s: The Service %s:%s has been ack'd" % (event.source, host, service)
+                return_string = "%s: acknowledged service %s:%s" % (event.source, host, service)
             self.write_to_nagios_cmd(write_string)
             return event.target, return_string
         except TypeError:
@@ -525,7 +525,7 @@ class MozillaNagiosStatus:
             try:
                 write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s" % (timestamp, host, svc)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: ok, acknowledgment (if any) for %s:%s has been removed." % (event.source, host, svc)
+                return event.target, "%s: removed acknowledgment (if any) for service %s:%s" % (event.source, host, svc)
             except Exception, e:
                 return event.target, "%s Could not ack" % (e)
 
@@ -533,7 +533,7 @@ class MozillaNagiosStatus:
             try:
                 write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s" % (timestamp, host)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
+                return event.target, "%s: removed acknowledgment (if any) for host %s" % (event.source, host)
             except Exception, e:
                 return event.target, "%s Could not ack" % (e)
 
@@ -553,10 +553,10 @@ class MozillaNagiosStatus:
                 service is None
             if service is None:
                 write_string = "[%lu] REMOVE_HOST_ACKNOWLEDGEMENT;%s" % (timestamp, host)
-                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
+                return event.target, "%s: removed acknowledgment (if any) for host %s" % (event.source, host)
             else:
                 write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s" % (timestamp, host, service)
-                return event.target, "%s: ok, acknowledgment (if any) for %s:%s has been removed." % (event.source, host, service)
+                return event.target, "%s: removed acknowledgment (if any) for service %s:%s" % (event.source, host, service)
             self.write_to_nagios_cmd(write_string)
             return event.target, "%s" % (write_string) 
         except TypeError:
@@ -585,11 +585,11 @@ class MozillaNagiosStatus:
             if service is None:
                 write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
+                return event.target, "%s: acknowledged host %s" % (event.source, host) 
             else:
                 write_string = "[%lu] ACKNOWLEDGE_SVC_PROBLEM;%s;%s;1;1;1;%s;%s\n" % (timestamp, host, service, from_user, message)
                 self.write_to_nagios_cmd(write_string)
-                return event.target, "%s: The Service %s:%s has been ack'd" % (event.source, host, service) 
+                return event.target, "%s: acknowledged service %s:%s" % (event.source, host, service) 
         except TypeError:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
         except IndexError:
@@ -609,7 +609,7 @@ class MozillaNagiosStatus:
 
             write_string = "[%lu] ACKNOWLEDGE_HOST_PROBLEM;%s;1;1;1;%s;%s\n" % (timestamp,host,from_user,message)
             self.write_to_nagios_cmd(write_string)
-            return event.target, "%s: The Host %s has been ack'd" % (event.source, host) 
+            return event.target, "%s: acknowledged host %s" % (event.source, host) 
         except TypeError:
             return event.target, "%s: Sorry, but no alert exists at this index" % (event.source) 
         except IndexError:
@@ -880,11 +880,11 @@ class MozillaNagiosStatus:
             self.write_to_nagios_cmd(write_string)
             write_string = "[%lu] SCHEDULE_FORCED_HOST_CHECK;%s;%lu\n" % (int(time.time()), host, int(time.time()))
             self.write_to_nagios_cmd(write_string)
-            return event.target, "%s: rechecking all services on %s" % (event.source, host) 
+            return event.target, "%s: rechecking all services on host %s" % (event.source, host)
         except Exception, e:
             return event.target, "%s Sorry, but I'm unable to recheck" % (event.source) 
 
-        return event.target, "%s: rechecking all services on %s" % (event.source, host) 
+        return event.target, "%s: rechecking all services on host %s" % (event.source, host)
     def status_by_index(self, event, message, options):
         ret = None
         host_statuses =  []
