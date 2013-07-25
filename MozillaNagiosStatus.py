@@ -105,10 +105,10 @@ class MozillaNagiosStatus:
 
         self.message_commands.append({'regex':'^validate ([^:]+)\s*$', 'callback':self.validate_command})
 
-        self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
-        self.message_commands.append({'regex':'^downtime\s+([^: ]+):"([^"]+)"\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime})
-        self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+)\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime})
-        self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[dhms])\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime_by_index})
+        self.message_commands.append({'regex':'^downtime\s+([^: ]+):"([^"]+)"\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
 
         self.message_commands.append({'regex':'^undowntime ([^:]+)\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^:]+):"([^"]+)"\s*$', 'callback':self.cancel_downtime})
@@ -147,8 +147,8 @@ class MozillaNagiosStatus:
             'status <host>',
             'status <host:service>',
             'status <alert_id>',
-            'downtime <alert_id> <interval><d|h|m|s> <message> <interval> is the how long <d|h|m|s> is days|hours|minutes|seconds',
-            'downtime <host:service> <interval><d|h|m|s> <message> <interval> is the how long <d|h|m|s> is days|hours|minutes|seconds',
+            'downtime <alert_id> <interval><y|d|h|m|s> <message> <interval> is the how long <y|d|h|m|s> is years|days|hours|minutes|seconds',
+            'downtime <host:service> <interval><y|d|h|m|s> <message> <interval> is the how long <y|d|h|m|s> is years|days|hours|minutes|seconds',
             'undowntime <host>',
             'undowntime <host:service>',
             'mute',
@@ -244,7 +244,7 @@ class MozillaNagiosStatus:
 
         if host is not None and self.validate_host(host) is True:
             current_time = time.time() 
-            m = re.search("(\d+)([dhms])", duration)
+            m = re.search("(\d+)([ydhms])", duration)
             if m:
                 duration = self.interval_to_seconds(m.group(1), m.group(2))
 
@@ -332,7 +332,7 @@ class MozillaNagiosStatus:
 
         if self.validate_host(host) is True:
             current_time = time.time() 
-            m = re.search("(\d+)([dhms])", duration)
+            m = re.search("(\d+)([ydhms])", duration)
             if m:
                 duration = self.interval_to_seconds(m.group(1), m.group(2))
                 if service is not None:
@@ -356,6 +356,8 @@ class MozillaNagiosStatus:
             duration = int(amount) * 3600
         elif type == "d":
             duration = int(amount) * 86400
+        elif type == "y":
+            duration = int(amount) * 86400 * 365
         else:
             duration = amount
 
