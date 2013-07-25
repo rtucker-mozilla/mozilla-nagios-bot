@@ -556,7 +556,7 @@ class MozillaNagiosStatus:
                 return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
             else:
                 write_string = "[%lu] REMOVE_SVC_ACKNOWLEDGEMENT;%s;%s" % (timestamp, host, service)
-                return event.target, "%s: ok, acknowledgment (if any) for %s has been removed." % (event.source, host)
+                return event.target, "%s: ok, acknowledgment (if any) for %s:%s has been removed." % (event.source, host, service)
             self.write_to_nagios_cmd(write_string)
             return event.target, "%s" % (write_string) 
         except TypeError:
