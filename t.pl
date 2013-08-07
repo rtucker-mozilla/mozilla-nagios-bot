@@ -125,3 +125,6 @@ say((
 say((
         'ack host "message message message"' =~ '^ack ([^: ]+)\s(.*)$'
     ) ? "ok -- $1 .. $2" : 'not ok');
+say((
+        'ack host message message message' =~ '^ack ([^: ]+)\s(.*)$'
+    ) ? "ok -- $1 .. $2" : 'not ok');
