@@ -1304,8 +1304,10 @@ class MozillaNagiosStatus:
 
     def get_oncall_from_statusmk(self, oncall_type):
         oncall_from_statusmk = self.get_oncall_name_from_statusmk(oncall_type)
-        return "%s currently has the pager" % oncall_from_statusmk
-
+        if oncall_from_statusmk.startswith('ERROR:')
+            return "unable to get oncall for %s" % oncall_type
+        else
+            return "%s currently has the pager" % oncall_from_statusmk
 
     def get_oncallmk(self, event, message, options):
         try:
