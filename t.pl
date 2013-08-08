@@ -7,16 +7,16 @@ say((
         'ack 123 message:message' =~ '^ack (\d+)\s+(.*)$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 say((
-        'ack host:"service name" message:message' =~ '^ack ([^:]+):"([^"]+)"\s+(.*)\s*$'
+        'ack host:"service name" message:message' =~ '^ack ([^: ]+):"([^"]+)"\s+(.*)\s*$'
     ) ? "ok -- $1 .. $2 .. $3" : 'not ok');
 say((
-        'ack host:"service name"' =~ '^ack ([^:]+):"([^"]+)"\s*$'
+        'ack host:"service name"' =~ '^ack ([^: ]+):"([^"]+)"\s*$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 say((
-        'ack host:service name' =~ '^ack ([^:]+):([^:]+)\s*$'
+        'ack host:service name' =~ '^ack ([^: ]+):([^:]+)\s*$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 say((
-        'ack host message:message' =~ '^ack ([^:]+)\s(.*)$'
+        'ack host message:message' =~ '^ack ([^: ]+)\s(.*)$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 say((
         'ack 123' =~ '^ack \S+\s*$'
@@ -27,13 +27,13 @@ say((
         'unack 123' =~ '^unack (\d+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 say((
-        'unack host:"service name"' =~ '^unack ([^:]+):"([^"]+)"\s*$'
+        'unack host:"service name"' =~ '^unack ([^: ]+):"([^"]+)"\s*$'
     ) ? "ok -- $1 $2" : 'not ok');
 say((
-        'unack host:service name' =~ '^unack ([^:]+):(.+)$'
+        'unack host:service name' =~ '^unack ([^: ]+):(.+)$'
     ) ? "ok -- $1 $2" : 'not ok');
 say((
-        'unack host' =~ '^unack ([^:]+)\s*$'
+        'unack host' =~ '^unack ([^: ]+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 
 say '# recheck';
@@ -41,10 +41,10 @@ say((
         'recheck 123' =~ '^recheck (\d+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 say((
-        'recheck host:service name' =~ '^recheck ([^:]+):.*$'
+        'recheck host:service name' =~ '^recheck ([^: ]+):.*$'
     ) ? "ok -- $1" : 'not ok');
 say((
-        'recheck host' =~ '^recheck ([^:]+)\s*$'
+        'recheck host' =~ '^recheck ([^: ]+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 
 say '# status';
@@ -52,13 +52,13 @@ say((
         'status 123' =~ '^status (\d+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 say((
-        'status host:"service name"' =~ '^status ([^:]+):"([^"]+)"\s*$'
+        'status host:"service name"' =~ '^status ([^: ]+):"([^"]+)"\s*$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 say((
-        'status host:service name' =~ '^status ([^:]+):(.+)$'
+        'status host:service name' =~ '^status ([^: ]+):(.+)$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 say((
-        'status host' =~ '^status ([^:]+)\s*$'
+        'status host' =~ '^status ([^: ]+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 say((
         '^status$'
@@ -66,7 +66,7 @@ say((
 
 say '# validate';
 say((
-        'validate host' =~ '^validate ([^:]+)\s*$'
+        'validate host' =~ '^validate ([^: ]+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 
 say '# downtime';
@@ -85,13 +85,13 @@ say((
 
 say '# undowntime';
 say((
-        'undowntime host' =~ '^undowntime ([^:]+)\s*$'
+        'undowntime host' =~ '^undowntime ([^: ]+)\s*$'
     ) ? "ok -- $1" : 'not ok');
 say((
-        'undowntime host:"service name"' =~ '^undowntime ([^:]+):"([^"]+)"\s*$'
+        'undowntime host:"service name"' =~ '^undowntime ([^: ]+):"([^"]+)"\s*$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 say((
-        'undowntime host:service name' =~ '^undowntime ([^:]+):(.+)$'
+        'undowntime host:service name' =~ '^undowntime ([^: ]+):(.+)$'
     ) ? "ok -- $1 .. $2" : 'not ok');
 
 say '# mute';
@@ -122,4 +122,9 @@ say '# edge cases';
 say((
         'downtime host:service name 4d downtime host for 4d :)' =~ '^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$'
     ) ? "ok -- $1 .. $2 .. $3 .. $4" : 'not ok');
-
+say((
+        'ack host "message message message"' =~ '^ack ([^: ]+)\s(.*)$'
+    ) ? "ok -- $1 .. $2" : 'not ok');
+say((
+        'ack host message message message' =~ '^ack ([^: ]+)\s(.*)$'
+    ) ? "ok -- $1 .. $2" : 'not ok');
