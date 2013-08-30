@@ -56,11 +56,11 @@ class NagiosBot(bot.SimpleBot):
                     sendable_help_messages.append(abbreviated_help_message)
                 if len(sendable_help_messages) > 0:
                     if help_command != '':
-                        self.send_message(event.target, "%s: Here is usage for %s" % (event.source, help_command))
+                        self.send_message(event.target, "%s: Here is the help for '%s':" % (event.source, help_command))
                     for hc in sendable_help_messages:
-                        self.send_message(event.target, "%s" % (hc))
+                        self.send_message(event.target, "  %s" % (hc))
                 else:
-                    self.send_message(event.target, "%s: No help available for command %s " % (event.source, help_command))
+                    self.send_message(event.target, "%s: No help available for '%s'." % (event.source, help_command))
 
             else:
                 _is_found = False
