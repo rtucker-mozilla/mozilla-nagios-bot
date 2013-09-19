@@ -110,6 +110,11 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
 
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+(\d+)\s+(.*)\s*$', 'callback':self.downtime_by_index})
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+):"([^"]+)"\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+):(.+?)\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+)\s+(.*)\s*$', 'callback':self.downtime})
+
         self.message_commands.append({'regex':'^undowntime ([^: ]+)\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^: ]+):"([^"]+)"\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^: ]+):(.+)$', 'callback':self.cancel_downtime})
@@ -221,14 +226,22 @@ class MozillaNagiosStatus:
         from_user =  event.source
         host = None
         try:
-            dict_object = self.ackable_list[int(options.group(1)) - self.list_offset]
+            # If format = downtime 1h 101 test comment
+            m = re.search("(\d+)([ydhms])", options.group(1))
+            if m:
+                duration = options.group(1)
+                ack_index = options.group(2)
+            # If format = downtime 101 1h test comment
+            else:
+                duration = options.group(2)
+                ack_index = options.group(1)
+            dict_object = self.ackable_list[int(ack_index) - self.list_offset]
             host = dict_object['host']
             try:
                 service = dict_object['service']
             except:
                 service is None
             try:
-                duration = options.group(2)
                 original_duration = duration
                 comment = options.group(3)
             except Exception ,e:
@@ -242,22 +255,7 @@ class MozillaNagiosStatus:
         if service and '*' in service:
             return event.target, "%s: Unable to downtime services by wildcard" % (event.source)
 
-        if host is not None and self.validate_host(host) is True:
-            current_time = time.time() 
-            m = re.search("(\d+)([ydhms])", duration)
-            if m:
-                duration = self.interval_to_seconds(m.group(1), m.group(2))
-
-                if service is not None:
-                    write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
-                    self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for service %s:%s scheduled for %s" % (event.source, host, service, self.get_hms_from_seconds(original_duration))
-                else:
-                    write_string = "[%lu] SCHEDULE_HOST_DOWNTIME;%s;%d;%d;1;0;%d;%s;%s\n" % (int(time.time()), host, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
-                    self.write_to_nagios_cmd(write_string)
-                    return event.target, "%s: Downtime for host %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
-        else:
-            return event.target, "%s: Unable to find host" % (event.source)
+        return self.process_downtime(event, host, service, duration, comment)
 
     def cancel_downtime(self, event, message, options):
         message = ""
@@ -332,15 +330,25 @@ class MozillaNagiosStatus:
             return event.target, "%s: Host Not Found %s" % (event.source, host) 
 
     def downtime(self, event, message, options):
-        try:
+        # If format = downtime 1h host:service test comment
+        m = re.search("(\d+)([ydhms])", options.group(1))
+        if m:
+            duration = options.group(1)
+            host = options.group(2)
+            service_index = 3
+        # If format = downtime host:service 1h test comment
+        else:
             host = options.group(1)
+            service_index = 2
+            duration = options.group(3)
+        try:
             try: 
-                service = options.group(2)
-                duration = options.group(3)
+                # If there is no options.group(4) then that
+                # means there is no service
                 comment = options.group(4)
+                service = options.group(service_index)
             except:
                 service = None
-                duration = options.group(2)
                 comment = options.group(3)
             if service == '' or service == '*':
                 service = None
