@@ -956,10 +956,10 @@ class MozillaNagiosStatus:
             query.append("GET services")
             query.append("Columns: host_name state plugin_output last_check service_acknowledged description")
             service_query = self.build_wildcard_query(service_search)
-            query.append("Filter: description ~ %s" % service_query)
+            query.append("Filter: description ~~ %s" % service_query)
             if host_search and len(host_search) > 0:
                 host_query = self.build_wildcard_query(host_search)
-                query.append("Filter: host_name ~ %s" % host_query)
+                query.append("Filter: host_name ~~ %s" % host_query)
         query_string = "%s\n\n" % ('\n'.join(query))
         return self.execute_query(query_string)
 
