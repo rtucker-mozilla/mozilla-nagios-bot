@@ -300,23 +300,8 @@ class MozillaNagiosStatus:
 
         return event.target, message
 
-    def downtime(self, event, message, options):
-        try:
-            host = options.group(1)
-            try: 
-                service = options.group(2)
-                duration = options.group(3)
-                original_duration = duration
-                comment = options.group(4)
-            except:
-                service = None
-                duration = options.group(2)
-                original_duration = duration
-                comment = options.group(3)
-            if service == '' or service == '*':
-                service = None
-        except Exception, e:
-            return event.target, "%s: Unable to downtime host %s" % (event.source, host) 
+    def process_downtime(self, event, host, service, duration, comment):
+        original_duration = duration
 
         if host and '*' in host:
             return event.target, "%s: Unable to downtime hosts by wildcard" % (event.source)
@@ -345,6 +330,24 @@ class MozillaNagiosStatus:
                     return event.target, "%s: Downtime for host %s scheduled for %s" % (event.source, host, self.get_hms_from_seconds(original_duration) )
         else:
             return event.target, "%s: Host Not Found %s" % (event.source, host) 
+
+    def downtime(self, event, message, options):
+        try:
+            host = options.group(1)
+            try: 
+                service = options.group(2)
+                duration = options.group(3)
+                comment = options.group(4)
+            except:
+                service = None
+                duration = options.group(2)
+                comment = options.group(3)
+            if service == '' or service == '*':
+                service = None
+            return self.process_downtime(event, host, service, duration, comment)
+        except Exception, e:
+            return event.target, "%s: Unable to downtime host %s" % (event.source, host) 
+
             
     def interval_to_seconds(self, amount, type = None):
 
