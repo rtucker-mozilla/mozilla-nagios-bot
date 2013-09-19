@@ -645,7 +645,7 @@ class MozillaNagiosStatus:
         while 1:
             #new_oncall = self.get_oncall_from_file()
             new_oncall = self.get_oncall_name_from_statusmk('sysadmin')
-            if new_oncall != current_oncall and 'ERROR' not in new_oncall:
+            if new_oncall != current_oncall and not new_oncall.startswith('ERROR:'):
                 for channel in self.oncall_channels:
                     self.send_oncall_update(connection, channel['name'], new_oncall)
                 if self.update_oncall:
