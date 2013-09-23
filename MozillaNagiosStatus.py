@@ -1303,7 +1303,7 @@ class MozillaNagiosStatus:
             else:
                 return "UNKNOWN"
         except IndexError:
-            return "ERROR :%s" % oncall_type
+            return "ERROR: %s" % oncall_type
 
     def get_oncall_from_statusmk(self, oncall_type):
         oncall_from_statusmk = self.get_oncall_name_from_statusmk(oncall_type)
