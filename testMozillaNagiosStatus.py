@@ -113,7 +113,7 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 100 1m blah blah'
-        m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
+        m = re.search('^downtime\s+(\d+)\s+(\d+[ydhms])\s+(.*)\s*$', message)
         target, message = self.tc.downtime_by_index(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for service test-host.fake.mozilla.com:Test Service scheduled for 0:01:00' % (self.my_nick) )
@@ -126,6 +126,15 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service 2', 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.ackable_list[0]['service'], 'Test Service')
         self.assertEqual(self.tc.ackable_list[1]['service'], 'Test Service 2')
+
+    def test_downtime_by_hostname_with_service_no_comment(self):
+        self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime foo:bar 1m'
+        m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
+        target, message = self.tc.downtime_by_index_missing_comment(self.event, message, m)
+        self.assertEqual(target, '#sysadmins')
+        self.assertEqual(message, '%s: Could not downtime. Missing message argument.' % (self.my_nick) )
 
     def test_downtime_by_hostname_with_service(self):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')

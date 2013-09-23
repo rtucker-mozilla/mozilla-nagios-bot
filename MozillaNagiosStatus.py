@@ -109,6 +109,7 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^downtime\s+([^: ]+):"([^"]+)"\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+(\d+)\s+(\d+[dhms])', 'callback':self.downtime_by_index_missing_comment})
 
         self.message_commands.append({'regex':'^undowntime ([^: ]+)\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^: ]+):"([^"]+)"\s*$', 'callback':self.cancel_downtime})
@@ -216,6 +217,8 @@ class MozillaNagiosStatus:
     def get_ack_number(self):
         return self.act_ct + self.list_offset
 
+    def downtime_by_index_missing_comment(self, event, message, options):
+        return event.target, "%s: Could not downtime. Missing message argument." % (event.source)
     def downtime_by_index(self, event, message, options):
         timestamp = int(time.time())
         from_user =  event.source
