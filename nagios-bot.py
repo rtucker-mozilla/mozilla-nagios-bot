@@ -43,6 +43,9 @@ class NagiosBot(bot.SimpleBot):
                     for hc in self.help_commands:
                         if hc.startswith(help_command):
                             sendable_help_messages.append(hc)
+                    if settings.HELP_DOCUMENTATION_LINK:
+                        help_text = "Documentation Here: %s" % (settings.HELP_DOCUMENTATION_LINK)
+                        sendable_help_messages.append(help_text)
                 else:
                     abbreviated_help_message = 'Available Commands: '
 
