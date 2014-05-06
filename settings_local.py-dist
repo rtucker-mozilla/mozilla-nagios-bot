@@ -13,3 +13,4 @@ CHANNEL_GROUPS = {
     'nagioscontact':'#irc_channel_to_alert_to',
     }
 DEFAULT_CHANNEL_GROUP = '#default_channel'
+#INVENTORY_URL_PREFIX = 'https://inventory/core/search/#q='
