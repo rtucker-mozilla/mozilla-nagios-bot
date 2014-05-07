@@ -111,11 +111,6 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
 
-        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+(\d+)\s+(.*)\s*$', 'callback':self.downtime_by_index})
-        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+):"([^"]+)"\s+(.*)\s*$', 'callback':self.downtime})
-        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+):(.+?)\s+(.*)\s*$', 'callback':self.downtime})
-        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+)\s+(.*)\s*$', 'callback':self.downtime})
-
         self.message_commands.append({'regex':'^undowntime ([^: ]+)\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^: ]+):"([^"]+)"\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^: ]+):(.+)$', 'callback':self.cancel_downtime})
@@ -934,7 +929,15 @@ class MozillaNagiosStatus:
         host_statuses =  []
         service_statuses =  []
         try:
-            dict_object = self.ackable_list[int(options.group(1)) - self.list_offset]
+            # Because of negative indexing of lists
+            # We need to confirm a positive number, otherwise
+            # the bot will respond as though it's list_offset
+            # range is 1000 greater than it actually is
+            dict_offset = int(options.group(1)) - self.list_offset
+            if dict_offset < 0:
+                return event.target, "%s Sorry, but I can't find any matching services" % (event.source)
+
+            dict_object = self.ackable_list[dict_offset]
             host = dict_object['host']
             try:
                 service = dict_object['service']

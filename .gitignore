@@ -12,3 +12,5 @@ page.pl
 settings.py
 settings.py.erb
 ircutils
+.idea
+get_diffs.sh
