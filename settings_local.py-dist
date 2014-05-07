@@ -14,3 +14,4 @@ CHANNEL_GROUPS = {
     }
 DEFAULT_CHANNEL_GROUP = '#default_channel'
 HELP_DOCUMENTATION_LINK = None
+#INVENTORY_URL_PREFIX = 'https://inventory/core/search/#q='

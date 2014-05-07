@@ -118,6 +118,32 @@ say((
         'oncall' =~ '^(?:oncall|whoisoncall)$'
     ) ? "ok" : 'not ok');
 
+say '# inventory';
+say((
+        'inv 1234' =~ '^inv(?:entory)?\s+(?:for\s+)?(\d+)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+say((
+        'inv for 1234' =~ '^inv(?:entory)?\s+(?:for\s+)?(\d+)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+say((
+        'inventory 1234' =~ '^inv(?:entory)?\s+(?:for\s+)?(\d+)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+say((
+        'inventory for 1234' =~ '^inv(?:entory)?\s+(?:for\s+)?(\d+)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+say((
+        'inv f.q.d.n' =~ '^inv(?:entory)?\s+(?:for\s+)?(.*)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+say((
+        'inv for f.q.d.n' =~ '^inv(?:entory)?\s+(?:for\s+)?(.*)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+say((
+        'inventory f.q.d.n' =~ '^inv(?:entory)?\s+(?:for\s+)?(.*)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+say((
+        'inventory for f.q.d.n' =~ '^inv(?:entory)?\s+(?:for\s+)?(.*)\s*$'
+    ) ? "ok -- $1" : 'not ok');
+
 say '# edge cases';
 say((
         'downtime host:service name 4d downtime host for 4d :)' =~ '^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$'

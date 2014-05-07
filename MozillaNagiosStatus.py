@@ -69,6 +69,7 @@ class MozillaNagiosStatus:
         self.mklive_status_socket = MKLIVE_STATUS_SOCKET
         self.use_irc_hilight = USE_IRC_HILIGHT
         self.irc_hilight_nick = IRC_HILIGHT_NICK
+        self.inventory_url_prefix = INVENTORY_URL_PREFIX
 
 
         ##Start new thread to parse the nagios log file
@@ -131,6 +132,9 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
         self.message_commands.append({'regex':'^(?:oncall|whoisoncall)$', 'callback':self.get_oncallmk})
         #self.message_commands.append({'regex':'^whoisoncall$', 'callback':self.get_oncall})
+
+        self.message_commands.append({'regex':'^inv(?:entory)?\s+(?:for\s+)?(\d+)\s*$', 'callback':self.get_inventory_system_by_index})
+        self.message_commands.append({'regex':'^inv(?:entory)?\s+(?:for\s+)?(.*)\s*$', 'callback':self.get_inventory_system_by_name})
 
     ###Default entry point for each plugin. Simply returns a regex and which static method to call upon matching the regex
 
@@ -220,6 +224,33 @@ class MozillaNagiosStatus:
 
     def get_ack_number(self):
         return self.act_ct + self.list_offset
+
+    def inventory_system_url(host):
+        if host is not None and self.validate_host(host) is True:
+            return "%s%s" % (self.inventory_url_prefix, host)
+        else:
+            return None
+
+    def get_inventory_system_by_index(self, event, message, options):
+        host = None
+        try:
+            dict_object = self.ackable_list[int(options.group(1)) - self.list_offset]
+            host = dict_object['host']
+        except Exception, e:
+            return event.target, "%s: unable to inventory system index %s" % (event.source, e)
+        url = self.inventory_system_url(host)
+        if url is not None:
+            return event.target, "%s: inventory system %s is at %s" % (event.source, host, url)
+        else:
+            return event.target, "%s: unable to inventory system index %s" % (event.source, host)
+
+    def get_inventory_system_by_name(self, event, message, options):
+        host = options.group(1)
+        url = self.inventory_system_url(host)
+        if url is not None:
+            return event.target, "%s: inventory system %s is at %s" % (event.source, host, url)
+        else:
+            return event.target, "%s: unable to inventory system index %s" % (event.source, host)
 
     def downtime_by_index(self, event, message, options):
         timestamp = int(time.time())
