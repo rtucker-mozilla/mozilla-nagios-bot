@@ -220,7 +220,7 @@ class MozillaNagiosStatus:
     def get_ack_number(self):
         return self.act_ct + self.list_offset
 
-    def inventory_system_url(host):
+    def inventory_system_url(self, host):
         if host is not None and self.validate_host(host) is True:
             return "%s%s" % (self.inventory_url_prefix, host)
         else:
