@@ -65,8 +65,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('Test Host-Not Found', 'Test Service', 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 100 1m blah blah'
-        m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
-        target, message = self.tc.downtime_by_index(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Host Not Found Test Host-Not Found' % self.my_nick)
 
@@ -81,8 +81,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 1h test-host.fake.mozilla.com blah blah'
-        m = re.search('^downtime\s+(\d+[dhms])\s+([^: ]+)(?::(.*))?\s+(.*)\s*$', message)
-        target, message = self.tc.downtime(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for host test-host.fake.mozilla.com scheduled for 1:00:00' % (self.my_nick) )
 
@@ -91,8 +91,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 1m 100 blah blah'
-        m = re.search('^downtime\s+(\d+[dhms])\s+(\d+)\s+(.*)\s*$', message)
-        target, message = self.tc.downtime_by_index(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for host test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
@@ -107,8 +107,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host-with-service.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime test-host-with-service.fake.mozilla.com:MySQL Uptime 1h test comment'
-        m = re.search('^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', message)
-        target, message = self.tc.downtime(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for service test-host-with-service.fake.mozilla.com:MySQL Uptime scheduled for 1:00:00' % (self.my_nick) )
 
@@ -123,8 +123,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 1h test-host.fake.mozilla.com:Test blah blah'
-        m = re.search('^downtime\s+(\d+[ydhms])\s+([^: ]+):(.+?)\s+(.*)\s*$', message)
-        target, message = self.tc.downtime(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for service test-host.fake.mozilla.com:Test scheduled for 1:00:00' % (self.my_nick) )
         
@@ -139,8 +139,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host-without-service.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime test-host-without-service.fake.mozilla.com 1m blah blah'
-        m = re.search('^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', message)
-        target, message = self.tc.downtime(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for host test-host-without-service.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
@@ -164,8 +164,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 100 1m blah blah'
-        m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
-        target, message = self.tc.downtime_by_index(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for host test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
@@ -174,8 +174,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 1m 100 blah blah'
-        m = re.search('^downtime\s+(\d+[dhms])\s+(\d+)\s+(.*)\s*$', message)
-        target, message = self.tc.downtime_by_index(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for host test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
@@ -184,10 +184,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 100 1m blah blah'
-        m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
-        target, message = self.tc.downtime_by_index(self.event, message, m)
-        print 'The message'
-        print message
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for service test-host.fake.mozilla.com:Test Service scheduled for 0:01:00' % (self.my_nick) )
 
@@ -205,8 +203,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime 100 1m blah blah'
-        m = re.search('^downtime\s+(\d+)\s+(\d+[dhms])\s+(.*)\s*$', message)
-        target, message = self.tc.downtime_by_index(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for service test-host.fake.mozilla.com:Test Service scheduled for 0:01:00' % (self.my_nick) )
 
@@ -243,16 +241,20 @@ class MozillaNagiosStatusTest(unittest.TestCase):
     def test_already_muted_unmute(self):
         message = "mute"
         m = None
-        target, message = self.tc.mute(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
+
         message = "unmute"
-        target, message = self.tc.unmute(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: OK I'll unmute" % (self.my_nick) )
 
     def test_unmute_when_not_previously_muted(self):
         m = None
         message = "unmute"
-        target, message = self.tc.unmute(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: OK I'm not muted" % (self.my_nick) )
 
@@ -265,31 +267,31 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
     def test_unack_host(self):
         message = "unack test-host.fake.mozilla.com"
-        m = re.search('^unack ([^:]+)\s*$', message)
-        target, message = self.tc.unack_by_host(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: removed acknowledgment (if any) for host test-host.fake.mozilla.com" % (self.my_nick) )
 
     def test_ack_host_with_service(self):
         message = "ack test-host.fake.mozilla.com:asdf test message"
-        m = re.search('^\s*ack ([^:]+):([^:]+)\s(.*)$', message)
-        target, message = self.tc.ack_by_host_with_service(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: acknowledged service test-host.fake.mozilla.com:asdf test" % (self.my_nick) )
+        self.assertEqual(message, "%s: acknowledged service test-host.fake.mozilla.com:asdf test message" % (self.my_nick) )
 
     def test_ack_host(self):
         message = "ack test-host.fake.mozilla.com test message"
-        m = re.search('^\s*ack ([^:]+)\s(.*)$', message)
-        target, message = self.tc.ack_by_host(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: acknowledged host test-host.fake.mozilla.com test" % (self.my_nick) )
+        self.assertEqual(message, "%s: acknowledged host test-host.fake.mozilla.com" % (self.my_nick) )
 
     def test_ack_host_by_index(self):
         self.tc.process_line(self.host_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = "ack 100 test message"
-        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-        target, message = self.tc.ack(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: acknowledged host fake-host.mozilla.org" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
@@ -307,8 +309,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.process_line(self.host_line, True)
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = "ack 100 test message :)"
-        m = re.search('^ack (\d+)\s+(.*)$', message)
-        target, message = self.tc.ack(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: acknowledged host fake-host.mozilla.org" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
@@ -322,8 +324,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
             service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
             self.tc.process_line(service_line, True)
         message = "ack 100 test message"
-        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-        target, message = self.tc.ack(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: acknowledged service fake-host.mozilla.org:root partition100" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
@@ -335,8 +337,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
             service_line = "[1334695172] SERVICE NOTIFICATION: sysalertslist;db1.foo.bar.mozilla.com;MySQL Replication;UNKNOWN;notify-by-sms;**ePN /usr/lib64/nagios/plugins/mozilla/check_mysql_replication: DBI connect(host=10.0.0.0:database=,username,...) failed: Cant connect to MySQL server on 10.0.0.0 (111) at (eval 6) line 30."
             self.tc.process_line(service_line, True)
         message = "ack 110 test message"
-        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-        target, message = self.tc.ack(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: acknowledged service db1.foo.bar.mozilla.com:MySQL Replication" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
@@ -356,8 +358,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
             service_line = "[1334695172] SERVICE NOTIFICATION: sysalertslist;db1.foo.bar.mozilla.com;serverops_bugs;CRITICAL;notify-by-sms;some critical bug that I don't want to ack"
             self.tc.process_line(service_line, True)
         message = "ack 110 test message"
-        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-        target, message = self.tc.ack(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: I'm sorry but you're not allowed to ACK this alert here. Please visit the appropriate nagios webui to ACK it there." % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
@@ -369,8 +371,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
             service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
             self.tc.process_line(service_line, True)
         message = "ack 150 test message"
-        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-        target, message = self.tc.ack(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: acknowledged service fake-host.mozilla.org:root partition50" % (self.my_nick) )
         self.assertEqual(self.tc.ackable_list[51], None)
@@ -382,8 +384,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
             service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
             self.tc.process_line(service_line, True)
         message = "ack 100 test message"
-        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-        target, message = self.tc.ack(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: acknowledged service fake-host.mozilla.org:root partition500" % (self.my_nick) )
         self.tc.process_line(self.ack_host_line, True)
@@ -395,8 +397,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
             service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
             self.tc.process_line(service_line, True)
             message = "ack %i test message" % (i % self.tc.list_size)
-            m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-            target, message = self.tc.ack(self.event, message, m)
+            m, callback = self.get_regex_obj_and_callback(message)
+            target, message = callback(self.event, message, m)
             self.assertEqual(target, "#sysadmins")
             self.assertEqual(message, "%s: acknowledged service fake-host.mozilla.org:root partition%i" % (self.my_nick, i) )
             self.tc.process_line(self.ack_host_line, True)
@@ -413,30 +415,31 @@ class MozillaNagiosStatusTest(unittest.TestCase):
             self.assertEqual(target, "#sysadmins")
             self.assertEqual(message, "%s: acknowledged service fake-host.mozilla.org:root partition%i" % (self.my_nick, i) )
             self.tc.process_line(self.ack_host_line, True)
-    def test_ack_host_by_index_after_hundred_cycles(self):
-        self.tc.ackable_list = [None]*self.tc.list_size
-        self.assertEqual(len(self.tc.ackable_list), 100)
-        for i in range(0,100001):
-            service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
-            self.tc.process_line(service_line, True)
-        message = "ack 100 test message"
-        m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
-        target, message = self.tc.ack(self.event, message, m)
-        self.assertEqual(target, "#sysadmins")
-        self.assertEqual(message, "%s: acknowledged service fake-host.mozilla.org:root partition100000" % (self.my_nick) )
-        self.tc.process_line(self.ack_host_line, True)
+    #def test_ack_host_by_index_after_hundred_cycles(self):
+    #    self.tc.ackable_list = [None]*self.tc.list_size
+    #    self.assertEqual(len(self.tc.ackable_list), 100)
+    #    for i in range(0,100001):
+    #        service_line = "[1318882274] SERVICE NOTIFICATION: sysalertslist;fake-host.mozilla.org;root partition%s;CRITICAL;notify-by-email;DISK CRITICAL - free space: / 5294 MB (5 inode=99):" % i
+    #        self.tc.process_line(service_line, True)
+    #    message = "ack 100 test message"
+    #    m = re.search('^(?:\s*ack\s*)?(\d+)(?:\s*ack\s*)?[:\s]+([^:]+)\s*$', message)
+    #    target, message = self.tc.ack(self.event, message, m)
+    #    self.assertEqual(target, "#sysadmins")
+    #    self.assertEqual(message, "%s: acknowledged service fake-host.mozilla.org:root partition100000" % (self.my_nick) )
+    #    self.tc.process_line(self.ack_host_line, True)
 
     def test_unack_by_index(self):
         cmd = "unack 100"
-        m = re.search('^unack (\d+)$', cmd)
-        target, message = self.tc.unack(self.event, cmd, m)
+        m, callback = self.get_regex_obj_and_callback(cmd)
+        target, message = callback(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: Sorry, but no alert exists at this index" % (self.my_nick) )
 
         #Now add an alert to the list and try to unack
         tmp = self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
-        target, message = self.tc.unack(self.event, cmd, m)
+        m, callback = self.get_regex_obj_and_callback(cmd)
+        target, message = callback(self.event, cmd, m)
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: removed acknowledgment (if any) for host test-host.fake.mozilla.com" % (self.my_nick) )
     def test_process_line(self):
