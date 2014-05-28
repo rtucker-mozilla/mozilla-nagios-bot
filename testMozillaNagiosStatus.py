@@ -96,6 +96,22 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for host test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
+    def test_downtime_by_host_and_service(self):
+        self.tc.execute_query = Mock()
+        self.tc.execute_query.return_value = [[
+                                                  'test-host-with-service.fake.mozilla.com',
+                                                  '0',
+                                                  'Replication running.  Lag time: 0 seconds',
+                                                  '1324567',
+                                                  ]]
+        self.tc.ackable('test-host-with-service.fake.mozilla.com', 'Test Service', 'CRITICAL', 'Test Message')
+        self.assertEqual(self.tc.get_ack_number(), 100)
+        message = 'downtime test-host-with-service.fake.mozilla.com:MySQL Uptime 1h test comment'
+        m = re.search('^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', message)
+        target, message = self.tc.downtime(self.event, message, m)
+        self.assertEqual(target, '#sysadmins')
+        self.assertEqual(message, '%s: Downtime for service test-host-with-service.fake.mozilla.com:MySQL Uptime scheduled for 1:00:00' % (self.my_nick) )
+
     def test_downtime_by_host_and_service_with_duration_preceeding(self):
         self.tc.execute_query = Mock()
         self.tc.execute_query.return_value = [[

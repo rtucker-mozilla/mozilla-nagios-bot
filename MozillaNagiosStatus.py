@@ -111,6 +111,11 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^downtime\s+([^: ]+):(.+?)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
         self.message_commands.append({'regex':'^downtime\s+([^: ]+)\s+(\d+[ydhms])\s+(.*)\s*$', 'callback':self.downtime})
 
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+(\d+)\s+(.*)\s*$', 'callback':self.downtime_by_index})
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+):"([^"]+)"\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+):(.+?)\s+(.*)\s*$', 'callback':self.downtime})
+        self.message_commands.append({'regex':'^downtime\s+(\d+[ydhms])\s+([^: ]+)\s+(.*)\s*$', 'callback':self.downtime})
+
         self.message_commands.append({'regex':'^undowntime ([^: ]+)\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^: ]+):"([^"]+)"\s*$', 'callback':self.cancel_downtime})
         self.message_commands.append({'regex':'^undowntime ([^: ]+):(.+)$', 'callback':self.cancel_downtime})
@@ -343,7 +348,22 @@ class MozillaNagiosStatus:
             current_time = time.time() 
             m = re.search("(\d+)([ydhms])", duration)
             if m:
-                duration = self.interval_to_seconds(m.group(1), m.group(2))
+                try:
+                    duration = self.interval_to_seconds(m.group(1), m.group(2))
+                except TypeError, e:
+                    print e
+                    try:
+                        print m.group(1)
+                    except:
+                        print "Couldn't print m.group(1)"
+                        pass
+
+                    try:
+                        print m.group(1)
+                    except:
+                        print "Couldn't print m.group(2)"
+                        pass
+
                 if service is not None:
                     write_string = "[%lu] SCHEDULE_SVC_DOWNTIME;%s;%s;%d;%d;1;0;%d;%s;%s" % (int(time.time()), host, service, int(time.time()), int(time.time()) + duration, duration, event.source, comment)
                     self.write_to_nagios_cmd(write_string)
