@@ -220,8 +220,8 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.tc.ackable('test-host.fake.mozilla.com', None, 'CRITICAL', 'Test Message')
         self.assertEqual(self.tc.get_ack_number(), 100)
         message = 'downtime test-host.fake.mozilla.com 1m blah blah'
-        m = re.search('^downtime\s+([^: ]+)(?::(.*))?\s+(\d+[dhms])\s+(.*)\s*$', message)
-        target, message = self.tc.downtime(self.event, message, m)
+        m, callback = self.get_regex_obj_and_callback(message)
+        target, message = callback(self.event, message, m)
         self.assertEqual(target, '#sysadmins')
         self.assertEqual(message, '%s: Downtime for host test-host.fake.mozilla.com scheduled for 0:01:00' % (self.my_nick) )
 
@@ -490,8 +490,15 @@ class MozillaNagiosStatusTest(unittest.TestCase):
 
     def test_get_page_plugin(self):
         plugins = self.tc.return_plugins()
-        self.assertEqual('^ack (\d+)\s+(.*)$', plugins[0]['regex']) 
-        
+        self.assertEqual('^ack (\d+)\s+(.*)$', plugins[0]['regex'])
+
+    def get_regex_obj_and_callback(self, command_string):
+        regex_list = [r['regex'] for r in self.tc.message_commands]
+        for mc in self.tc.message_commands:
+            m = re.match(mc['regex'], command_string)
+            if m:
+                return m, mc['callback']
+        return None
         
 class NagiosStatusTest(unittest.TestCase):
     def setUp(self):
@@ -621,6 +628,7 @@ class NagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, "#sysadmins")
         self.assertTrue("%s: db2.foo.mozilla.com:Swap is \x033OK\x03\x03\x03 - SWAP OK - 100%% free (2043 MB out of 2047 MB)" % self.event.source in message[0])
         self.assertEqual(len(message), 1)
+
 class NagiosLogLineTest(unittest.TestCase):
 
     def setUp(self):
