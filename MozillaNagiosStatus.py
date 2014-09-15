@@ -133,6 +133,10 @@ class MozillaNagiosStatus:
         self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(all)\s*$', 'callback':self.get_all_oncall_type})
         self.message_commands.append({'regex':'^(?:oncall|whoisoncall)\s+(.*)$', 'callback':self.get_oncallmk})
         self.message_commands.append({'regex':'^(?:oncall|whoisoncall)$', 'callback':self.get_oncallmk})
+        self.message_commands.append({'regex':'^(?:onduty|whoisonduty)\s+(list)\s*$', 'callback':self.get_available_oncall})
+        self.message_commands.append({'regex':'^(?:onduty|whoisonduty)\s+(all)\s*$', 'callback':self.get_all_oncall_type})
+        self.message_commands.append({'regex':'^(?:onduty|whoisonduty)\s+(.*)$', 'callback':self.get_oncallmk})
+        self.message_commands.append({'regex':'^(?:onduty|whoisonduty)$', 'callback':self.get_oncallmk})
         #self.message_commands.append({'regex':'^whoisoncall$', 'callback':self.get_oncall})
 
         self.message_commands.append({'regex':'^inv(?:entory)?\s+(?:for\s+)?(\d+)\s*$', 'callback':self.get_inventory_system_by_index})
@@ -166,6 +170,7 @@ class MozillaNagiosStatus:
             'unmute',
             #'oncall|whoisoncall',
             'oncall <who>  # <who> can be <all|list|or an entry from the output of oncallmk list>',
+            'onduty <who>  # <who> can be <all|list|or an entry from the output of ondutymk list>',
             ]
     def return_plugins(self):
         return self.message_commands
@@ -691,7 +696,7 @@ class MozillaNagiosStatus:
             connection.execute("TOPIC", channel, trailing=topic)
 
     def send_oncall_update(self, connection, channel, oncall):
-        connection.send_message(channel, "New Sysadmin OnCall is %s" % (oncall))
+        connection.send_message(channel, "New Sysadmin OnDuty is %s" % (oncall))
 
     def monitor_current_oncall(self, connection):
         """
@@ -720,16 +725,16 @@ class MozillaNagiosStatus:
     def set_new_oncall(self, connection, new_oncall):
         for channel in self.oncall_channels:
             channel_current_topic = self.get_channel_topic(self.channels, channel['name'])
-            m = re.search('on call sysadmin: (\S+)', channel_current_topic)
+            m = re.search('on duty sysadmin: (\S+)', channel_current_topic)
             #    If the topic has an on call sysadmin: <sysadmin_name>
             if m and m.group(1):
-                channel_current_topic = re.sub('on call sysadmin: \S+','on call sysadmin: %s' % new_oncall, channel_current_topic)
+                channel_current_topic = re.sub('on duty sysadmin: \S+','on call sysadmin: %s' % new_oncall, channel_current_topic)
             #    If there is no one on call
             elif len(channel_current_topic) == 0:
-                channel_current_topic = 'on call sysadmin: %s' % new_oncall
+                channel_current_topic = 'on udty sysadmin: %s' % new_oncall
             #    If there is a topic, but no on call in it
             else:
-                channel_current_topic = '%s || on call sysadmin: %s' % (channel_current_topic, new_oncall)
+                channel_current_topic = '%s || on duty sysadmin: %s' % (channel_current_topic, new_oncall)
 
             self.set_topic(connection, channel['name'], channel_current_topic)
 
@@ -1353,7 +1358,7 @@ class MozillaNagiosStatus:
                     return_list.append("%s: %s currently has the %s pager" % (event_source, m.group(2), m.group(1)))
             return event.target, return_list
         except IndexError:
-            return event_source, "I've failed to detect available oncalls"
+            return event_source, "I've failed to detect available onduties"
     def get_oncall_name_from_statusmk(self, oncall_type):
         query = []
         query.append("GET contacts")
@@ -1367,12 +1372,12 @@ class MozillaNagiosStatus:
             else:
                 return "UNKNOWN"
         except IndexError:
-            return "ERROR: %s" % oncall_type
+            return "ERROR: %s" % onduty_type
 
     def get_oncall_from_statusmk(self, oncall_type):
         oncall_from_statusmk = self.get_oncall_name_from_statusmk(oncall_type)
         if oncall_from_statusmk.startswith('ERROR:'):
-            return "unable to get oncall for %s" % oncall_type
+            return "unable to get onduty for %s" % oncall_type
         else:
             return "%s currently has the pager" % oncall_from_statusmk
 
