@@ -265,6 +265,13 @@ class MozillaNagiosStatusTest(unittest.TestCase):
         self.assertEqual(target, "#sysadmins")
         self.assertEqual(message, "%s: unknown currently has the pager" % (self.my_nick) )
 
+    def test_onduty(self):
+        m = None
+        message = "whoisonduty"
+        target, message = self.tc.get_oncall(self.event, message, m)
+        self.assertEqual(target, "#sysadmins")
+        self.assertEqual(message, "%s: unknown currently has the pager" % (self.my_nick) )
+
     def test_unack_host(self):
         message = "unack test-host.fake.mozilla.com"
         m, callback = self.get_regex_obj_and_callback(message)
