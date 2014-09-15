@@ -1358,7 +1358,7 @@ class MozillaNagiosStatus:
                     return_list.append("%s: %s currently has the %s pager" % (event_source, m.group(2), m.group(1)))
             return event.target, return_list
         except IndexError:
-            return event_source, "I've failed to detect available onduties"
+            return event_source, "I've failed to detect available onduties from mklivestatus"
     def get_oncall_name_from_statusmk(self, oncall_type):
         query = []
         query.append("GET contacts")
