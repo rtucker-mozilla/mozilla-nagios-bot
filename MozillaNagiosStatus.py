@@ -731,7 +731,7 @@ class MozillaNagiosStatus:
                 channel_current_topic = re.sub('on duty sysadmin: \S+','on call sysadmin: %s' % new_oncall, channel_current_topic)
             #    If there is no one on call
             elif len(channel_current_topic) == 0:
-                channel_current_topic = 'on udty sysadmin: %s' % new_oncall
+                channel_current_topic = 'on duty sysadmin: %s' % new_oncall
             #    If there is a topic, but no on call in it
             else:
                 channel_current_topic = '%s || on duty sysadmin: %s' % (channel_current_topic, new_oncall)
