@@ -728,7 +728,7 @@ class MozillaNagiosStatus:
             m = re.search('on duty sysadmin: (\S+)', channel_current_topic)
             #    If the topic has an on call sysadmin: <sysadmin_name>
             if m and m.group(1):
-                channel_current_topic = re.sub('on duty sysadmin: \S+','on call sysadmin: %s' % new_oncall, channel_current_topic)
+                channel_current_topic = re.sub('on duty sysadmin: \S+','on duty sysadmin: %s' % new_oncall, channel_current_topic)
             #    If there is no one on call
             elif len(channel_current_topic) == 0:
                 channel_current_topic = 'on duty sysadmin: %s' % new_oncall
