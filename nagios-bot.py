@@ -115,8 +115,10 @@ class NagiosBot(bot.SimpleBot):
         accept_messeges = ('Password accepted - you are now recognized.',
                 'You are already identified.')
         if self.state == 1:
-            if (len(event.params) > 0 and
-                    event.params[0] == "End of /MOTD command."):
+            if (len(event.params) > 0 and (
+                    event.params[0] == "End of /MOTD command." or
+                    event.params[0] == "End of message of the day."
+               )):
                 if REGISTER:
                     nagios_bot.send_message("NickServ", to_nickserv)
                     self.state = 3
