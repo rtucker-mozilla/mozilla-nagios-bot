@@ -862,12 +862,22 @@ class MozillaNagiosStatus:
                 state_string = format.color(l.state, format.YELLOW)
             else:
                 state_string = format.color(l.state, format.RED)
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=1080026
+            # https://github.com/rtucker-mozilla/mozilla-nagios-bot/issues/44
+
+            try:
+                host_search = self.mksearch(l.host, None)
+                host_address = host_search[0][5]
+                host_and_host_address = '%s (%s)' % (l.host, host_address)
+            except (IndexError, KeyError):
+                host_and_host_address = '%s' % (l.host)
+
             if is_ack is False:
                 self.ackable(l.host, None, l.state, l.message)
-                write_string = "%s [%i] %s is %s :%s" % (l.time_string, self.get_ack_number(), l.host, state_string, l.message)
+                write_string = "%s [%i] %s is %s :%s" % (l.time_string, self.get_ack_number(), host_and_host_address, state_string, l.message)
             else:
                 state_string = format.color(l.state, format.BLUE)
-                write_string = "%s %s is %s :%s" % (l.time_string, l.host, state_string, l.message)
+                write_string = "%s %s is %s :%s" % (l.time_string, host_and_host_address, state_string, l.message)
         channel = self.get_channel_group(l.notification_recipient)
         if is_test is False:
             if self.is_muted(channel) is False:
@@ -1021,7 +1031,7 @@ class MozillaNagiosStatus:
         query = []
         if not service_search and host_search and len(host_search) > 0:
             query.append("GET hosts")
-            query.append("Columns: host_name state plugin_output last_check host_acknowledged")
+            query.append("Columns: host_name state plugin_output last_check host_acknowledged address")
             host_query = self.build_wildcard_query(host_search)
             query.append("Filter: host_name ~ %s" % host_query)
         else:
