@@ -826,14 +826,14 @@ class MozillaNagiosStatus:
             elif l.state == "OK":
                 state_string = format.color(l.state, format.GREEN)
             elif l.state == "WARNING":
-                state_string = format.color(l.state, format.YELLOW)
+                state_string = format.color(l.state, format.OLIVE)
             elif l.state == "UNKNOWN":
-                state_string = format.color(l.state, format.YELLOW)
+                state_string = format.color(l.state, format.OLIVE)
             elif l.state == "CRITICAL":
                 state_string = format.color(l.state, format.RED)
             elif re.search("DOWNTIME", l.state):
                 is_ack = True
-                state_string = format.color(l.state, format.YELLOW)
+                state_string = format.color(l.state, format.OLIVE)
             else:
                 state_string = format.color(l.state, format.RED)
             if is_ack is False:
@@ -852,14 +852,14 @@ class MozillaNagiosStatus:
             elif re.search(l.state, "UP"):
                 state_string = format.color(l.state, format.GREEN)
             elif re.search(l.state, "WARNING"):
-                state_string = format.color(l.state, format.YELLOW)
+                state_string = format.color(l.state, format.OLIVE)
             elif re.search(l.state, "DOWN"):
                 state_string = format.color(l.state, format.RED)
             elif re.search(l.state, "UNREACHABLE"):
                 state_string = format.color(l.state, format.RED)
             elif re.search("DOWNTIME", l.state):
                 is_ack = True
-                state_string = format.color(l.state, format.YELLOW)
+                state_string = format.color(l.state, format.OLIVE)
             else:
                 state_string = format.color(l.state, format.RED)
             # https://bugzilla.mozilla.org/show_bug.cgi?id=1080026
@@ -1085,11 +1085,11 @@ class MozillaNagiosStatus:
                 if current_state == '0':
                     state_string = format.color('OK', format.GREEN)
                 if current_state == '1':
-                    state_string = format.color('WARNING', format.YELLOW)
+                    state_string = format.color('WARNING', format.OLIVE)
                 if current_state == '2':
                     state_string = format.color('CRITICAL', format.RED)
                 if current_state == '3':
-                    state_string = format.color('UNKNOWN', format.YELLOW)
+                    state_string = format.color('UNKNOWN', format.OLIVE)
             if service:
                 write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source,
                                 host_name, description, state_string, plugin_output,
@@ -1154,7 +1154,7 @@ class MozillaNagiosStatus:
                                 if entry['current_state'] == '0':
                                     state_string = format.color('OK', format.GREEN)
                                 if entry['current_state'] == '1':
-                                    state_string = format.color('WARNING', format.YELLOW)
+                                    state_string = format.color('WARNING', format.OLIVE)
                                 if entry['current_state'] == '2':
                                     state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
@@ -1171,7 +1171,7 @@ class MozillaNagiosStatus:
                                 if entry['current_state'] == '0':
                                     state_string = format.color('OK', format.GREEN)
                                 if entry['current_state'] == '1':
-                                    state_string = format.color('WARNING', format.YELLOW)
+                                    state_string = format.color('WARNING', format.OLIVE)
                                 if entry['current_state'] == '2':
                                     state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
@@ -1188,7 +1188,7 @@ class MozillaNagiosStatus:
                                 if entry['current_state'] == '0':
                                     state_string = format.color('OK', format.GREEN)
                                 if entry['current_state'] == '1':
-                                    state_string = format.color('WARNING', format.YELLOW)
+                                    state_string = format.color('WARNING', format.OLIVE)
                                 if entry['current_state'] == '2':
                                     state_string = format.color('CRITICAL', format.RED)
                             write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
@@ -1206,7 +1206,7 @@ class MozillaNagiosStatus:
                                     if entry['current_state'] == '0':
                                         state_string = format.color('OK', format.GREEN)
                                     if entry['current_state'] == '1':
-                                        state_string = format.color('WARNING', format.YELLOW)
+                                        state_string = format.color('WARNING', format.OLIVE)
                                     if entry['current_state'] == '2':
                                         state_string = format.color('CRITICAL', format.RED)
                                 write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
@@ -1224,7 +1224,7 @@ class MozillaNagiosStatus:
                                     if entry['current_state'] == '0':
                                         state_string = format.color('OK', format.GREEN)
                                     if entry['current_state'] == '1':
-                                        state_string = format.color('WARNING', format.YELLOW)
+                                        state_string = format.color('WARNING', format.OLIVE)
                                     if entry['current_state'] == '2':
                                         state_string = format.color('CRITICAL', format.RED)
                                 write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
@@ -1242,22 +1242,22 @@ class MozillaNagiosStatus:
                         if entry['current_state'] == '0':
                             state_string = format.color('OK', format.GREEN)
                         if entry['current_state'] == '1':
-                            state_string = format.color('WARNING', format.YELLOW)
+                            state_string = format.color('WARNING', format.OLIVE)
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
                         if entry['current_state'] == '3':
-                            state_string = format.color('UNKNOWN', format.YELLOW)
+                            state_string = format.color('UNKNOWN', format.OLIVE)
                         write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, hostname, entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                         output_list.append(write_string)
                     elif '*' in hostname and hostname.split('*')[0] in entry['host_name']:
                         if entry['current_state'] == '0':
                             state_string = format.color('OK', format.GREEN)
                         if entry['current_state'] == '1':
-                            state_string = format.color('WARNING', format.YELLOW)
+                            state_string = format.color('WARNING', format.OLIVE)
                         if entry['current_state'] == '2':
                             state_string = format.color('CRITICAL', format.RED)
                         if entry['current_state'] == '3':
-                            state_string = format.color('UNKNOWN', format.YELLOW)
+                            state_string = format.color('UNKNOWN', format.OLIVE)
                         write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], self.readable_from_timestamp(entry['last_check']))
                         output_list.append(write_string)
                 if len(output_list) < self.service_output_limit:
@@ -1281,7 +1281,7 @@ class MozillaNagiosStatus:
                             if entry['current_state'] == '0':
                                 state_string = format.color('OK', format.GREEN)
                             if entry['current_state'] == '1':
-                                state_string = format.color('WARNING', format.YELLOW)
+                                state_string = format.color('WARNING', format.OLIVE)
                             if entry['current_state'] == '2':
                                 state_string = format.color('CRITICAL', format.RED)
                         write_string = "%s: %s:%s is %s - %s Last Checked: %s" % (event.source, entry['host_name'], entry['service_description'], state_string, entry['plugin_output'], entry['last_check'])
@@ -1306,7 +1306,7 @@ class MozillaNagiosStatus:
                             if entry['current_state'] == '0':
                                 state_string = format.color('OK', format.GREEN)
                             if entry['current_state'] == '1':
-                                state_string = format.color('WARNING', format.YELLOW)
+                                state_string = format.color('WARNING', format.OLIVE)
                             if entry['current_state'] == '2':
                                 state_string = format.color('CRITICAL', format.RED)
                         host_found = True
