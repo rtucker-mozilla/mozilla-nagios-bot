@@ -178,13 +178,17 @@ class MozillaNagiosStatus:
     def execute_query(self, query_string):
         retry = 0
         max_retry = 5
+        answer = ""
         while retry < max_retry:
             try:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 s.settimeout(10)
                 s.connect(self.mklive_status_socket)
                 s.send(query_string)
-                answer = s.recv(1000000000)
+                while True:
+                    data = s.recv(4096)
+                    if not data: break
+                    answer += data
                 s.shutdown(socket.SHUT_WR)
                 return self.parse_table(answer)
             except socket.error:
