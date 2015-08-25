@@ -184,7 +184,7 @@ class MozillaNagiosStatus:
                 s.settimeout(10)
                 s.connect(self.mklive_status_socket)
                 s.send(query_string)
-                answer = s.recv(100000000)
+                answer = s.recv(1000000000)
                 s.shutdown(socket.SHUT_WR)
                 return self.parse_table(answer)
             except socket.error:
