@@ -277,7 +277,11 @@ class MozillaNagiosStatus:
             else:
                 duration = options.group(2)
                 ack_index = options.group(1)
-            dict_object = self.ackable_list[int(ack_index) - self.list_offset]
+            try:
+                dict_object = self.ackable_list[int(ack_index) - self.list_offset]
+            except IndexError:
+                return event.target, "%s: Unable to find entry by index" % (event.source)
+
             host = dict_object['host']
             try:
                 service = dict_object['service']
