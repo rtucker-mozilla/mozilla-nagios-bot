@@ -16,6 +16,8 @@ class NagiosBot(bot.SimpleBot):
     state = 1
     MESSEGE_BUFFER = 10
     buffer_state = MESSEGE_BUFFER
+    sent_mode = False
+    channel_modes = {}
     ### message_commands is a list of dictionary objects. The regex object is the regex to match, the function object is the function name to call at a match
 
     plugins = [
@@ -34,6 +36,15 @@ class NagiosBot(bot.SimpleBot):
     def on_channel_message(self, event):
         if re.search('^%s[,: ]' % self.bot_name, event.message):
             self.message = re.sub('^%s[,: ]+' % self.bot_name, '', event.message).strip()
+            if not event.target in self.channel_modes:
+                resp = self.conn.execute("MODE %s" % event.target)
+                self.send_message(event.target, "%s: Checking channel security, please try again." % (event.source))
+                return
+            elif event.target in self.channel_modes and not 'k' in self.channel_modes[event.target]:
+                self.send_message(event.target, "%s: Sorry, cannot perform action without a key being set on this channel." % (event.source))
+                self.send_message(event.target, "%s: Please set a key, configure the bot to use the key and restart the bot to rejoin with a valid key." % (event.source))
+                return
+
             if self.message.startswith('help'):
                 sendable_help_messages = []
                 help_command = ''
@@ -89,6 +100,23 @@ class NagiosBot(bot.SimpleBot):
         print event.params
         pass
     def on_any(self, event):
+        if event.command == 'RPL_CHANNELMODEIS':
+            try:
+                m_channel = event.params[0]
+            except IndexError:
+                m_channel = None
+
+            try:
+                m_channel_mode = event.params[1]
+            except IndexError:
+                m_channel_mode = None
+
+            if not m_channel is None and not m_channel_mode is None:
+                if not m_channel in self.channel_modes:
+                    self.channel_modes[m_channel] = m_channel_mode
+                else:
+                    self.channel_modes[m_channel] = m_channel_mode
+
         """
         We need a state machine.
         start: -> s1
@@ -164,6 +192,9 @@ class NagiosBot(bot.SimpleBot):
         The on_any handler will dispatch to set_topic()
     """
     def on_join(self, event):
+
+        if not event.target in self.channel_modes:
+            resp = self.conn.execute("MODE %s" % event.target)
         self.execute("TOPIC", event.target)
 
     def set_topic(self, event):
